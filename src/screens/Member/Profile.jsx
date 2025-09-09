@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-
+import { useAuth } from '../../context/AuthContext';
 const colors = {
   background: '#006258',
   primary: '#2196F3',
@@ -90,10 +90,7 @@ const Profile = () => {
   const updateNotificationSettings = async ({ enabled }) => {
     // Mock API update call here
   };
-  const logout = () => {
-    console.log('Logging out');
-  };
-
+  const { logout, isAuthenticated } = useAuth();
   const fetchProfileData = async () => {
     setLoading(true);
     setError(null);
