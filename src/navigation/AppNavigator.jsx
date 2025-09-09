@@ -11,6 +11,8 @@ import WorkoutLog from '../screens/Member/WorkoutLog';
 import BottomTabNavigator from './BottomTabNavigator';
 import WorkoutPlanDetail from '../screens/Member/WorkoutPlanDetail';
 
+// import Training from '../screens/Member/Training'; // 👈 uncomment if exists
+
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {

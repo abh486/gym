@@ -1,1538 +1,518 @@
-import React, { useState, useEffect, useRef } from 'react';
+// DietLogEnhanced.js — Updated with Navy & Golden-Yellow Theme
+
+import React, { useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   StyleSheet,
-  TouchableOpacity,
-  FlatList,
   SafeAreaView,
-  Modal,
-  Dimensions,
   StatusBar,
-  Alert,
-  Animated,
-  Easing,
+  Dimensions,
   ScrollView,
+  TouchableOpacity,
+  Modal,
+  TextInput,
   Image,
-  ActivityIndicator,
+  FlatList,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  PermissionsAndroid,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import Video from 'react-native-video';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 
-import { launchImageLibrary } from 'react-native-image-picker';
-
-const { width, height } = Dimensions.get('window');
-
-
-
-const QuickMealCard = ({ meal, onPress, style }) => {
-  const scale = useRef(new Animated.Value(0)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.spring(scale, {
-        toValue: 1,
-        tension: 100,
-        friction: 8,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacity, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
-
-  return (
-    <Animated.View
-      style={[
-        styles.quickMealCard,
-        style,
-        {
-          transform: [{ scale }],
-          opacity,
-        },
-      ]}
-    >
-      <TouchableOpacity onPress={onPress} style={styles.quickMealButton}>
-        <Text style={styles.quickMealIcon}>{meal.icon}</Text>
-        <Text style={styles.quickMealName}>{meal.name}</Text>
-        <Text style={styles.quickMealCalories}>{meal.calories} kcal</Text>
-      </TouchableOpacity>
-    </Animated.View>
-  );
-};
-
-const MealCard = ({ item, index, onDelete }) => {
-  const scale = useRef(new Animated.Value(0)).current;
-  const translateX = useRef(new Animated.Value(-50)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const delay = index * 100;
-
-    setTimeout(() => {
-      Animated.parallel([
-        Animated.spring(scale, {
-          toValue: 1,
-          tension: 100,
-          friction: 8,
-          useNativeDriver: true,
-        }),
-        Animated.spring(translateX, {
-          toValue: 0,
-          tension: 80,
-          friction: 8,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacity, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }, delay);
-  }, []);
-
-  const handleDelete = () => {
-    Animated.parallel([
-      Animated.timing(scale, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start(() => onDelete(item.id));
-  };
-
-  return (
-    <Animated.View
-      style={[
-        styles.mealCard,
-        {
-          transform: [{ scale }, { translateX }],
-          opacity,
-        },
-      ]}
-    >
-      <View style={styles.mealCardContent}>
-        {/* Meal Photo */}
-        {item.photo && (
-          <Image source={{ uri: item.photo }} style={styles.mealCardPhoto} />
-        )}
-        
-        <View style={styles.mealHeader}>
-          <Text style={styles.mealName}>{item.mealName}</Text>
-          <View style={styles.caloriesBadge}>
-            <Text style={styles.caloriesText}>{item.calories} kcal</Text>
-          </View>
-        </View>
-        
-        {/* Meal Type Badge */}
-        {item.mealType && (
-          <View style={styles.mealTypeBadge}>
-            <Text style={styles.mealTypeBadgeText}>
-              {item.mealType.charAt(0).toUpperCase() + item.mealType.slice(1)}
-            </Text>
-          </View>
-        )}
-        
-        <View style={styles.macroRow}>
-          <View style={styles.macroItem}>
-            <Text style={styles.macroLabel}>Protein</Text>
-            <Text style={styles.macroValue}>{item.protein || 0}g</Text>
-          </View>
-          <View style={styles.macroItem}>
-            <Text style={styles.macroLabel}>Carbs</Text>
-            <Text style={styles.macroValue}>{item.carbs || 0}g</Text>
-          </View>
-          <View style={styles.macroItem}>
-            <Text style={styles.macroLabel}>Fat</Text>
-            <Text style={styles.macroValue}>{item.fats || 0}g</Text>
-          </View>
-        </View>
-        
-        {/* Notes */}
-        {item.notes && (
-          <View style={styles.notesContainer}>
-            <Text style={styles.notesText}>{item.notes}</Text>
-          </View>
-        )}
-        
-        <View style={styles.cardFooter}>
-          <Text style={styles.timeStamp}>{item.timestamp}</Text>
-          <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
-            <Text style={styles.deleteButtonText}>Delete</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Animated.View>
-  );
-};
-
-const StatCard = ({ title, value, subtitle, color, delay = 0 }) => {
-  const scale = useRef(new Animated.Value(0)).current;
-  const rotate = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    setTimeout(() => {
-      Animated.sequence([
-        Animated.spring(scale, {
-          toValue: 1,
-          tension: 100,
-          friction: 10,
-          useNativeDriver: true,
-        }),
-        Animated.sequence([
-          Animated.timing(rotate, {
-            toValue: 1,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-          Animated.timing(rotate, {
-            toValue: -1,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-          Animated.timing(rotate, {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-        ]),
-      ]).start();
-    }, delay);
-  }, [value]);
-
-  const rotateInterpolate = rotate.interpolate({
-    inputRange: [-1, 0, 1],
-    outputRange: ['-5deg', '0deg', '5deg'],
-  });
-
-  return (
-    <Animated.View
-      style={[
-        styles.statCard,
-        { borderLeftColor: color },
-        {
-          transform: [{ scale }, { rotate: rotateInterpolate }],
-        },
-      ]}
-    >
-      <Text style={styles.statTitle}>{title}</Text>
-      <Text style={[styles.statValue, { color }]}>{value}</Text>
-      <Text style={styles.statSubtitle}>{subtitle}</Text>
-    </Animated.View>
-  );
-};
-
-const PulsingButton = ({ onPress, children, style }) => {
-  const scale = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(scale, {
-          toValue: 1.1,
-          duration: 1000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(scale, {
-          toValue: 1,
-          duration: 1000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  }, []);
-
-  const handlePress = () => {
-    Animated.sequence([
-      Animated.timing(scale, {
-        toValue: 0.9,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scale, {
-        toValue: 1.1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
-    setTimeout(onPress, 100);
-  };
-
-  return (
-    <TouchableOpacity onPress={handlePress} activeOpacity={0.8}>
-      <Animated.View style={[style, { transform: [{ scale }] }]}>
-        {children}
-      </Animated.View>
-    </TouchableOpacity>
-  );
-};
+const { width } = Dimensions.get('window');
 
 const DietLog = () => {
-  const { colors } = useTheme();
-  const [logs, setLogs] = useState([]);
+  const [totalCalories, setTotalCalories] = useState(1500);
+  const [exerciseCalories, setExerciseCalories] = useState(200);
+  const [dailyCalorieGoal, setDailyCalorieGoal] = useState(2000);
+  const remainingCalories = Math.max(dailyCalorieGoal - totalCalories + exerciseCalories, 0);
+
+  const [totalProtein, setTotalProtein] = useState(60);
+  const [totalCarbs, setTotalCarbs] = useState(180);
+  const [totalFats, setTotalFats] = useState(40);
+
+  const [dailyProteinGoal] = useState(140);
+  const [dailyCarbGoal] = useState(250);
+  const [dailyFatGoal] = useState(70);
+
+  const [meals, setMeals] = useState({
+    Breakfast: [],
+    Lunch: [],
+    Dinner: [],
+    Snacks: [],
+  });
+
   const [modalVisible, setModalVisible] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [stats, setStats] = useState({
-    totalCalories: 0,
-    totalProtein: 0,
-    totalMeals: 0,
-  });
-  
-  // Custom meal form state
-  const [dietForm, setDietForm] = useState({
-    mealName: '',
-    calories: '',
-    protein: '',
-    carbs: '',
-    fats: '',
-    fiber: '',
-    sugar: '',
-    mealType: 'breakfast',
-    notes: '',
-    photo: null,
-  });
+  const [selectedMealType, setSelectedMealType] = useState('Breakfast');
+  const [foodName, setFoodName] = useState('');
+  const [foodCalories, setFoodCalories] = useState('');
+  const [foodProtein, setFoodProtein] = useState('');
+  const [foodCarbs, setFoodCarbs] = useState('');
+  const [foodFats, setFoodFats] = useState('');
+  const [foodPhoto, setFoodPhoto] = useState(null);
+  const [editMealId, setEditMealId] = useState(null);
 
-  const headerScale = useRef(new Animated.Value(1)).current;
-  const modalSlide = useRef(new Animated.Value(height)).current;
+  // Macro row component
+  const MacroRow = ({ label, value, goal, color }) => {
+    const pct = Math.min(100, Math.round((value / goal) * 100));
+    return (
+      <View style={styles.macroRow}>
+        <Text style={styles.macroLabel}>{label}</Text>
+        <View style={styles.progressBarBackground}>
+          <View style={[styles.progressBarFill, { width: `${pct}%`, backgroundColor: color }]} />
+        </View>
+        <Text style={styles.macroValue}>{value}/{goal}g</Text>
+      </View>
+    );
+  };
 
-  // Quick meal options with more variety and better categorization
-  const quickMeals = [
-    // Breakfast
-    { name: 'Oatmeal Bowl', calories: 150, icon: '🥣', protein: 6, carbs: 27, fats: 3, category: 'breakfast' },
-    { name: 'Greek Yogurt', calories: 59, icon: '🥛', protein: 10, carbs: 3.6, fats: 0.4, category: 'breakfast' },
-    { name: 'Eggs & Toast', calories: 155, icon: '🥚', protein: 13, carbs: 1.1, fats: 11, category: 'breakfast' },
-    { name: 'Smoothie Bowl', calories: 180, icon: '🍓', protein: 8, carbs: 25, fats: 5, category: 'breakfast' },
-    
-    // Lunch
-    { name: 'Chicken Salad', calories: 165, icon: '🍗', protein: 31, carbs: 0, fats: 3.6, category: 'lunch' },
-    { name: 'Tuna Sandwich', calories: 220, icon: '🥪', protein: 18, carbs: 25, fats: 8, category: 'lunch' },
-    { name: 'Quinoa Bowl', calories: 185, icon: '🥗', protein: 12, carbs: 28, fats: 6, category: 'lunch' },
-    { name: 'Turkey Wrap', calories: 195, icon: '🌯', protein: 22, carbs: 18, fats: 7, category: 'lunch' },
-    
-    // Dinner
-    { name: 'Salmon Fillet', calories: 208, icon: '🐟', protein: 25, carbs: 0, fats: 12, category: 'dinner' },
-    { name: 'Beef Steak', calories: 250, icon: '🥩', protein: 26, carbs: 0, fats: 15, category: 'dinner' },
-    { name: 'Pasta Primavera', calories: 320, icon: '🍝', protein: 12, carbs: 45, fats: 10, category: 'dinner' },
-    { name: 'Stir Fry', calories: 280, icon: '🥘', protein: 18, carbs: 22, fats: 12, category: 'dinner' },
-    
-    // Snacks
-    { name: 'Banana', calories: 89, icon: '🍌', protein: 1.1, carbs: 23, fats: 0.3, category: 'snack' },
-    { name: 'Almonds', calories: 164, icon: '🥜', protein: 6, carbs: 6, fats: 14, category: 'snack' },
-    { name: 'Apple', calories: 52, icon: '🍎', protein: 0.3, carbs: 14, fats: 0.2, category: 'snack' },
-    { name: 'Protein Bar', calories: 200, icon: '🍫', protein: 20, carbs: 15, fats: 8, category: 'snack' },
-  ];
+  // Permissions for camera (Android)
+  const requestCameraPermission = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          {
+            title: "Camera Permission",
+            message: "We need access to your camera to take meal photos",
+            buttonNeutral: "Ask Me Later",
+            buttonNegative: "Cancel",
+            buttonPositive: "OK"
+          }
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } catch (err) {
+        console.warn(err);
+        return false;
+      }
+    } else return true;
+  };
 
-  const mealCategories = [
-    { id: 'all', name: 'All', icon: '🍽️' },
-    { id: 'breakfast', name: 'Breakfast', icon: '🌅' },
-    { id: 'lunch', name: 'Lunch', icon: '☀️' },
-    { id: 'dinner', name: 'Dinner', icon: '🌙' },
-    { id: 'snack', name: 'Snacks', icon: '🍿' },
-  ];
+  const pickPhoto = async (fromCamera = false) => {
+    const options = { mediaType: 'photo', quality: 0.7, selectionLimit: 1 };
 
-  const [selectedCategory, setSelectedCategory] = useState('all');
-
-  const filteredMeals = selectedCategory === 'all' 
-    ? quickMeals 
-    : quickMeals.filter(meal => meal.category === selectedCategory);
-
-  useEffect(() => {
-    const totalCalories = logs.reduce((sum, log) => sum + parseInt(log.calories || 0), 0);
-    const totalProtein = logs.reduce((sum, log) => sum + parseInt(log.protein || 0), 0);
-    setStats({
-      totalCalories,
-      totalProtein,
-      totalMeals: logs.length,
-    });
-  }, [logs]);
-
-  useEffect(() => {
-    Animated.sequence([
-      Animated.timing(headerScale, {
-        toValue: 1.02,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(headerScale, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [logs.length]);
-
-  const handleQuickMeal = async (meal) => {
     try {
-      const response = await saveDietEntry({
-        mealName: meal.name,
-        calories: meal.calories.toString(),
-        protein: meal.protein.toString(),
-        carbs: meal.carbs.toString(),
-        fats: meal.fats.toString(),
-        mealType: meal.category
+      const result = fromCamera
+        ? await launchCamera(options)
+        : await launchImageLibrary(options);
+
+      if (result.didCancel) return;
+
+      if (result.assets && result.assets.length > 0) {
+        setFoodPhoto(result.assets[0].uri);
+      } else {
+        Alert.alert('Error', 'No photo selected');
+      }
+    } catch (error) {
+      console.log('ImagePicker error:', error);
+      Alert.alert('Error', 'Could not access camera or gallery');
+    }
+  };
+
+  const takePhoto = async () => {
+    const hasPermission = await requestCameraPermission();
+    if (hasPermission) pickPhoto(true);
+  };
+
+  // Add or edit meal
+  const addOrEditMeal = () => {
+    if (!foodName.trim()) return Alert.alert('Validation', 'Please enter meal name');
+    const cals = parseInt(foodCalories) || 0;
+    const prot = parseInt(foodProtein) || 0;
+    const carbs = parseInt(foodCarbs) || 0;
+    const fats = parseInt(foodFats) || 0;
+
+    if (editMealId) {
+      // Edit meal
+      setMeals(prev => {
+        const updatedList = prev[selectedMealType].map(item => {
+          if (item.id === editMealId) {
+            const diffCals = cals - item.calories;
+            const diffProt = prot - item.protein;
+            const diffCarbs = carbs - item.carbs;
+            const diffFats = fats - item.fats;
+
+            setTotalCalories(p => p + diffCals);
+            setTotalProtein(p => p + diffProt);
+            setTotalCarbs(c => c + diffCarbs);
+            setTotalFats(f => f + diffFats);
+
+            return { ...item, name: foodName, calories: cals, protein: prot, carbs, fats, photo: foodPhoto };
+          }
+          return item;
+        });
+        return { ...prev, [selectedMealType]: updatedList };
       });
-
-      if (response.success) {
-        // Add to local state with enhanced data
-        const newLog = {
-          ...meal,
-          id: Date.now().toString(),
-          timestamp: new Date().toLocaleTimeString(),
-          date: new Date().toLocaleDateString(),
-        };
-        setLogs([newLog, ...logs]);
-        
-        // Show success animation
-        Animated.sequence([
-          Animated.timing(headerScale, {
-            toValue: 1.1,
-            duration: 150,
-            useNativeDriver: true,
-          }),
-          Animated.timing(headerScale, {
-            toValue: 1,
-            duration: 150,
-            useNativeDriver: true,
-          }),
-        ]).start();
-        
-        Alert.alert('Success', `${meal.name} logged successfully! 🎉`);
-      } else {
-        Alert.alert('Error', response.message || 'Failed to log meal');
-      }
-    } catch (error) {
-      console.error('Quick meal error:', error);
-      Alert.alert('Error', 'Failed to log meal. Please try again.');
+    } else {
+      // Add new meal
+      const newItem = { id: Date.now().toString(), name: foodName, calories: cals, protein: prot, carbs, fats, photo: foodPhoto };
+      setMeals(prev => ({ ...prev, [selectedMealType]: [newItem, ...prev[selectedMealType]] }));
+      setTotalCalories(p => p + cals);
+      setTotalProtein(p => p + prot);
+      setTotalCarbs(c => c + carbs);
+      setTotalFats(f => f + fats);
     }
+
+    setFoodName(''); setFoodCalories(''); setFoodProtein(''); setFoodCarbs(''); setFoodFats(''); setFoodPhoto(null); setEditMealId(null);
+    setModalVisible(false);
   };
 
-  const handleCustomMeal = async () => {
-    if (!dietForm.mealName.trim() || !dietForm.calories.trim()) {
-      Alert.alert('Validation Error', 'Please enter at least a meal name and calories.');
-      return;
-    }
-    
-    console.log('Saving meal with data:', dietForm);
-    setLoading(true);
-    try {
-      const response = await saveDietEntry(dietForm);
-      console.log('API response:', response);
-
-      // Always add the meal locally for immediate feedback
-      const newLog = {
-        ...dietForm,
-        id: Date.now().toString(),
-        timestamp: new Date().toLocaleTimeString(),
-        date: new Date().toLocaleDateString(),
-      };
-      console.log('Adding new log:', newLog);
-      setLogs([newLog, ...logs]);
-      
-      if (response.success) {
-        closeModal();
-        resetDietForm();
-        Alert.alert('Success', 'Custom meal logged successfully! 🎉');
-      } else {
-        console.log('API call failed:', response.message);
-        Alert.alert('Warning', 'Meal added locally but failed to sync with server. ' + (response.message || 'Please try again later.'));
+  const deleteMeal = (mealType, id) => {
+    const item = meals[mealType].find(m => m.id === id);
+    if (!item) return;
+    Alert.alert('Delete meal', `Delete ${item.name}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete', style: 'destructive', onPress: () => {
+          setMeals(prev => ({ ...prev, [mealType]: prev[mealType].filter(m => m.id !== id) }));
+          setTotalCalories(p => p - item.calories);
+          setTotalProtein(p => p - item.protein);
+          setTotalCarbs(c => c - item.carbs);
+          setTotalFats(f => f - item.fats);
+        }
       }
-    } catch (error) {
-      console.error('Save diet error:', error);
-      
-      // Add meal locally even if API fails
-      const newLog = {
-        ...dietForm,
-        id: Date.now().toString(),
-        timestamp: new Date().toLocaleTimeString(),
-        date: new Date().toLocaleDateString(),
-      };
-      console.log('Adding meal locally due to API error:', newLog);
-      setLogs([newLog, ...logs]);
-      
-      Alert.alert('Warning', 'Meal added locally but failed to sync with server. Please check your internet connection and try again later.');
-    } finally {
-      setLoading(false);
-    }
+    ]);
   };
 
-  const resetDietForm = () => {
-    setDietForm({
-      mealName: '',
-      calories: '',
-      protein: '',
-      carbs: '',
-      fats: '',
-      fiber: '',
-      sugar: '',
-      mealType: 'breakfast',
-      notes: '',
-      photo: null,
-    });
-  };
-
-  const handleDietInput = (key, value) => {
-    setDietForm(prev => ({ ...prev, [key]: value }));
-  };
-
-  const selectImage = () => {
-    const options = {
-      mediaType: 'photo',
-      quality: 0.8,
-      maxWidth: 800,
-      maxHeight: 800,
-    };
-
-    launchImageLibrary(options, (response) => {
-      if (response.didCancel) {
-        // User cancelled image picker
-      } else if (response.error) {
-        Alert.alert('Error', 'Failed to pick image');
-      } else if (response.assets && response.assets[0]) {
-        const imageUri = response.assets[0].uri;
-        setDietForm(prev => ({ ...prev, photo: imageUri }));
-      }
-    });
-  };
-
-  const removePhoto = () => {
-    setDietForm(prev => ({ ...prev, photo: null }));
-  };
-
-  const openModal = () => {
+  const editMeal = (mealType, meal) => {
+    setSelectedMealType(mealType);
+    setFoodName(meal.name);
+    setFoodCalories(meal.calories.toString());
+    setFoodProtein(meal.protein.toString());
+    setFoodCarbs(meal.carbs.toString());
+    setFoodFats(meal.fats.toString());
+    setFoodPhoto(meal.photo);
+    setEditMealId(meal.id);
     setModalVisible(true);
-    Animated.spring(modalSlide, {
-      toValue: 0,
-      tension: 100,
-      friction: 8,
-      useNativeDriver: true,
-    }).start();
   };
 
-  const closeModal = () => {
-    Animated.timing(modalSlide, {
-      toValue: height,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => {
-      setModalVisible(false);
-      resetDietForm();
-    });
+  const mockSyncMeals = () => {
+    const sample = {
+      id: Date.now().toString(),
+      name: 'Avocado Toast',
+      calories: 220,
+      protein: 6,
+      carbs: 30,
+      fats: 10,
+      photo: 'https://images.unsplash.com/photo-1617196030513-ecbf44f2e17a?auto=format&fit=crop&w=400&q=80',
+    };
+    setMeals(prev => ({ ...prev, Snacks: [sample, ...prev.Snacks] }));
+    setTotalCalories(p => p + sample.calories);
+    setTotalProtein(p => p + sample.protein);
+    setTotalCarbs(c => c + sample.carbs);
+    setTotalFats(f => f + sample.fats);
+    Alert.alert('Sync complete', 'Imported 1 item from connected app');
   };
 
-  const deleteMeal = (id) => {
-    setLogs(logs.filter(log => log.id !== id));
+  const mockSyncWorkout = () => {
+    const burned = 320; setExerciseCalories(p => p + burned);
+    Alert.alert('Workout synced', `${burned} kcal added to exercise`);
   };
 
+  const MealItem = ({ item, mealType }) => (
+    <View style={styles.mealListItem}>
+      <View style={styles.mealThumb}>
+        {item.photo ? <Image source={{ uri: item.photo }} style={styles.mealImage} /> : <Text style={styles.mealPlaceholderIcon}>🍽️</Text>}
+      </View>
+      <View style={styles.mealInfo}>
+        <Text style={styles.mealName}>{item.name}</Text>
+        <Text style={styles.mealStats}>{item.calories} kcal · {item.protein}P · {item.carbs}C · {item.fats}F</Text>
+      </View>
+      <View style={styles.mealActionIcons}>
+        <TouchableOpacity onPress={() => editMeal(mealType, item)} style={{ marginRight: 6 }}>
+          <Icon name="pencil" size={22} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => deleteMeal(mealType, item.id)}>
+          <Icon name="delete" size={22} color="#fff" />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
-
-    // ---- NORMAL UI ----
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle={colors.background === '#0f0f23' ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
-
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Icon name="arrow-back" size={24} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Nutrition Tracker</Text>
-          <TouchableOpacity style={styles.addButton} onPress={openModal}>
-            <Icon name="add" size={24} color={colors.primary} />
-          </TouchableOpacity>
-        </View>
-        
-        {/* Stats Cards */}
-        <View style={styles.statsGrid}>
-          <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-            <View style={styles.statIconContainer}>
-              <Icon name="flame" size={24} color="#FF6B6B" />
-            </View>
-            <Text style={[styles.statValue, { color: colors.text }]}>{stats.totalCalories}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Calories</Text>
-          </View>
-          
-          <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-            <View style={styles.statIconContainer}>
-              <Icon name="fitness" size={24} color="#4ECDC4" />
-            </View>
-            <Text style={[styles.statValue, { color: colors.text }]}>{stats.totalProtein}g</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Protein</Text>
-          </View>
-          
-          <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-            <View style={styles.statIconContainer}>
-              <Icon name="restaurant" size={24} color="#45B7D1" />
-            </View>
-            <Text style={[styles.statValue, { color: colors.text }]}>{stats.totalMeals}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Meals</Text>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#001f3f" />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 30 }}>
+        {/* Video Header */}
+        <View style={styles.mainVideoContainer}>
+          <Video source={require('../../assets/video/854082-hd_1920_1080_25fps.mp4')} style={styles.video} resizeMode="cover" repeat muted />
+          <View style={styles.videoOverlay}>
+            <Text style={styles.workoutTitle}>Fuel Your Gains</Text>
+            <Text style={styles.workoutSubtitle}>Track calories & macros to achieve your goals</Text>
           </View>
         </View>
-      </View>
 
-      {/* Quick Actions */}
-      <View style={styles.quickActionsSection}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Actions</Text>
-        <View style={styles.quickActionsGrid}>
-          {mealCategories.map((category) => (
-            <TouchableOpacity
-              key={category.id}
-              style={[styles.quickActionCard, { backgroundColor: colors.surface }]}
-              onPress={() => setSelectedCategory(category.id)}
-            >
-              <Text style={styles.quickActionIcon}>{category.icon}</Text>
-              <Text style={[styles.quickActionText, { color: colors.text }]}>{category.name}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* Today's Meals */}
-      <View style={styles.mealsSection}>
-        <View style={styles.mealsHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Today's Meals</Text>
-          <TouchableOpacity style={styles.viewAllButton}>
-            <Text style={[styles.viewAllText, { color: colors.primary }]}>View All</Text>
-          </TouchableOpacity>
-        </View>
-        
-        {logs.length === 0 ? (
-          <View style={[styles.emptyContainer, { backgroundColor: colors.surface }]}>
-            <Icon name="restaurant-outline" size={48} color={colors.textSecondary} />
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>No meals logged yet</Text>
-            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>Start tracking your nutrition journey</Text>
-            <TouchableOpacity style={[styles.addFirstMealButton, { backgroundColor: colors.primary }]} onPress={openModal}>
-              <Text style={styles.addFirstMealButtonText}>Add Your First Meal</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <FlatList
-            data={logs.slice(0, 3)}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item, index }) => (
-              <MealCard item={item} index={index} onDelete={deleteMeal} />
-            )}
-            contentContainerStyle={styles.listContainer}
-            showsVerticalScrollIndicator={false}
-          />
-        )}
-      </View>
-
-      {/* Floating Action Button */}
-      <PulsingButton style={styles.fab} onPress={openModal}>
-        <Icon name="add" size={32} color="#fff" />
-      </PulsingButton>
-
-      {/* Custom Meal Modal */}
-      <Modal visible={modalVisible} transparent={true} animationType="fade">
-        <View style={styles.modalOverlay}>
-          <Animated.View 
-            style={[
-              styles.modalContent,
-              { transform: [{ translateY: modalSlide }] }
-            ]}
-          >
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add Custom Meal</Text>
-              <TouchableOpacity onPress={closeModal} style={styles.closeButton}>
-                <Text style={styles.closeButtonText}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView showsVerticalScrollIndicator={false}>
-              {/* Photo Section */}
-              <View style={styles.photoSection}>
-                <Text style={styles.sectionLabel}>📸 Meal Photo (Optional)</Text>
-                {dietForm.photo ? (
-                  <View style={styles.photoContainer}>
-                    <Image source={{ uri: dietForm.photo }} style={styles.mealPhoto} />
-                    <TouchableOpacity style={styles.removePhotoButton} onPress={removePhoto}>
-                      <Text style={styles.removePhotoText}>✕</Text>
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  <TouchableOpacity style={styles.addPhotoButton} onPress={selectImage}>
-                    <Icon name="camera" size={32} color="#4ecdc4" />
-                    <Text style={styles.addPhotoText}>Add Photo</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              {/* Basic Info */}
-              <Text style={styles.sectionLabel}>🍽️ Meal Information</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Meal Name"
-                placeholderTextColor="#888"
-                value={dietForm.mealName}
-                onChangeText={(text) => handleDietInput('mealName', text)}
-              />
-
-              {/* Meal Type Selector */}
-              <View style={styles.mealTypeContainer}>
-                <Text style={styles.mealTypeLabel}>Meal Type:</Text>
-                <View style={styles.mealTypeButtons}>
-                  {['breakfast', 'lunch', 'dinner', 'snack'].map((type) => (
-                    <TouchableOpacity
-                      key={type}
-                      style={[
-                        styles.mealTypeButton,
-                        dietForm.mealType === type && styles.selectedMealTypeButton
-                      ]}
-                      onPress={() => handleDietInput('mealType', type)}
-                    >
-                      <Text style={[
-                        styles.mealTypeText,
-                        dietForm.mealType === type && styles.selectedMealTypeText
-                      ]}>
-                        {type.charAt(0).toUpperCase() + type.slice(1)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+        {/* Stats Row */}
+        <View style={styles.statsRowWrapper}>
+          <View style={styles.statsRow}>
+            <View style={styles.caloriesCard}>
+              <Text style={styles.cardHeading}>Calories</Text>
+              <View style={styles.caloriesNumRow}>
+                <View style={styles.caloriesNumCol}>
+                  <Text style={styles.caloriesValue}>{totalCalories}</Text>
+                  <Text style={styles.caloriesLabel}>Food</Text>
+                </View>
+                <View style={styles.caloriesNumCol}>
+                  <Text style={styles.caloriesValue}>{exerciseCalories}</Text>
+                  <Text style={styles.caloriesLabel}>Exercise</Text>
+                </View>
+                <View style={styles.caloriesNumCol}>
+                  <Text style={styles.caloriesValueRemaining}>{remainingCalories}</Text>
+                  <Text style={styles.caloriesLabel}>Remaining</Text>
                 </View>
               </View>
-
-              {/* Calories */}
-              <Text style={styles.sectionLabel}>🔥 Calories</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Calories"
-                placeholderTextColor="#888"
-                keyboardType="numeric"
-                value={dietForm.calories}
-                onChangeText={(text) => handleDietInput('calories', text)}
-              />
-
-              {/* Macronutrients */}
-              <Text style={styles.sectionLabel}>🥗 Macronutrients</Text>
-              <View style={styles.inputRow}>
-                <TextInput
-                  style={styles.inputHalf}
-                  placeholder="Protein (g)"
-                  placeholderTextColor="#888"
-                  keyboardType="numeric"
-                  value={dietForm.protein}
-                  onChangeText={(text) => handleDietInput('protein', text)}
-                />
-                <TextInput
-                  style={styles.inputHalf}
-                  placeholder="Carbs (g)"
-                  placeholderTextColor="#888"
-                  keyboardType="numeric"
-                  value={dietForm.carbs}
-                  onChangeText={(text) => handleDietInput('carbs', text)}
-                />
+              <View style={styles.calorieProgressTrack}>
+                <View style={[styles.calorieProgressFill, { width: `${Math.min(100, Math.round((totalCalories / dailyCalorieGoal) * 100))}%` }]} />
               </View>
-              <View style={styles.inputRow}>
-                <TextInput
-                  style={styles.inputHalf}
-                  placeholder="Fats (g)"
-                  placeholderTextColor="#888"
-                  keyboardType="numeric"
-                  value={dietForm.fats}
-                  onChangeText={(text) => handleDietInput('fats', text)}
-                />
-                <TextInput
-                  style={styles.inputHalf}
-                  placeholder="Fiber (g)"
-                  placeholderTextColor="#888"
-                  keyboardType="numeric"
-                  value={dietForm.fiber}
-                  onChangeText={(text) => handleDietInput('fiber', text)}
-                />
-              </View>
+              <Text style={styles.calorieGoalText}>Goal {dailyCalorieGoal} kcal · Consumed {totalCalories} kcal</Text>
+            </View>
 
-              {/* Notes */}
-              <Text style={styles.sectionLabel}>📝 Notes (Optional)</Text>
-              <TextInput
-                style={[styles.input, styles.notesInput]}
-                placeholder="Add any notes about your meal..."
-                placeholderTextColor="#888"
-                multiline
-                numberOfLines={3}
-                value={dietForm.notes}
-                onChangeText={(text) => handleDietInput('notes', text)}
-              />
-
-              {/* Action Buttons */}
-              <View style={styles.modalActions}>
-                <TouchableOpacity style={styles.cancelButton} onPress={closeModal}>
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.saveButton} 
-                  onPress={handleCustomMeal}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <ActivityIndicator color="#fff" size="small" />
-                  ) : (
-                    <Text style={styles.saveButtonText}>Save Meal</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-          </Animated.View>
+            <View style={styles.macrosCard}>
+              <Text style={styles.cardHeading}>Macros</Text>
+              <MacroRow label="Carbs" value={totalCarbs} goal={dailyCarbGoal} color="#FFC107" />
+              <MacroRow label="Protein" value={totalProtein} goal={dailyProteinGoal} color="#FFA000" />
+              <MacroRow label="Fats" value={totalFats} goal={dailyFatGoal} color="#FF5722" />
+            </View>
+          </View>
         </View>
+
+        {/* Action Row */}
+        <View style={styles.actionRow}>
+          <TouchableOpacity style={styles.primaryBtn} onPress={() => setModalVisible(true)}><Text style={styles.primaryBtnText}>+ Add Meal</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.ghostBtn} onPress={mockSyncMeals}><Text style={styles.ghostBtnText}>Sync Meals</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.ghostBtn} onPress={mockSyncWorkout}><Text style={styles.ghostBtnText}>Sync Workout</Text></TouchableOpacity>
+        </View>
+
+        {/* Meals Lists */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Meals</Text>
+          {Object.keys(meals).map(mealType => (
+            <View key={mealType} style={{ marginBottom: 12 }}>
+              <View style={styles.mealHeaderRow}>
+                <Text style={styles.mealHeaderTitle}>{mealType}</Text>
+                <Text style={styles.mealHeaderCount}>{meals[mealType].length} items</Text>
+              </View>
+              {meals[mealType].length === 0 ? (
+                <View style={styles.emptyMealRow}><Text style={styles.emptyMealText}>No items yet — add or sync a meal</Text></View>
+              ) : (
+                <FlatList data={meals[mealType]} keyExtractor={i => i.id} horizontal showsHorizontalScrollIndicator={false} renderItem={({ item }) => <MealItem item={item} mealType={mealType} />} />
+              )}
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+
+      {/* Add Meal Modal */}
+      <Modal visible={modalVisible} animationType="slide" transparent>
+        <KeyboardAvoidingView style={styles.modalWrap} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{editMealId ? 'Edit Meal' : 'Add Meal'}</Text>
+            <View style={styles.mealTypeRow}>
+              {['Breakfast','Lunch','Dinner','Snacks'].map(t => (
+                <TouchableOpacity key={t} style={[styles.mealTypeBtn, selectedMealType===t && styles.mealTypeBtnActive]} onPress={()=>setSelectedMealType(t)}>
+                  <Text style={[styles.mealTypeBtnText, selectedMealType===t && styles.mealTypeBtnTextActive]}>{t}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TextInput placeholder="Food name" placeholderTextColor="#ccc" style={styles.input} value={foodName} onChangeText={setFoodName} />
+
+            <View style={styles.rowInputs}>
+              <TextInput placeholder="Calories" placeholderTextColor="#ccc" style={[styles.input,styles.smallInput]} value={foodCalories} onChangeText={setFoodCalories} keyboardType="numeric" />
+              <TextInput placeholder="Protein (g)" placeholderTextColor="#ccc" style={[styles.input,styles.smallInput]} value={foodProtein} onChangeText={setFoodProtein} keyboardType="numeric" />
+            </View>
+            <View style={styles.rowInputs}>
+              <TextInput placeholder="Carbs (g)" placeholderTextColor="#ccc" style={[styles.input,styles.smallInput]} value={foodCarbs} onChangeText={setFoodCarbs} keyboardType="numeric" />
+              <TextInput placeholder="Fats (g)" placeholderTextColor="#ccc" style={[styles.input,styles.smallInput]} value={foodFats} onChangeText={setFoodFats} keyboardType="numeric" />
+            </View>
+
+            <View style={styles.photoRow}>
+              <TouchableOpacity onPress={() => pickPhoto(false)} style={styles.photoBtn}><Text style={styles.photoBtnText}>Upload Photo</Text></TouchableOpacity>
+              <TouchableOpacity onPress={takePhoto} style={styles.photoBtn}><Text style={styles.photoBtnText}>Take Photo</Text></TouchableOpacity>
+              {foodPhoto ? <Image source={{uri:foodPhoto}} style={styles.photoPreview} /> : <View style={styles.photoPreviewPlaceholder}><Text style={{color:'#ccc'}}>No photo</Text></View>}
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={()=>{setModalVisible(false); setEditMealId(null);}}><Text style={styles.cancelBtnText}>Cancel</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.saveBtn} onPress={addOrEditMeal}><Text style={styles.saveBtnText}>{editMealId ? 'Save Changes' : 'Add Meal'}</Text></TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0f0f23',
-  },
-
-  header: {
-    padding: 20,
-    paddingTop: 40,
-    backgroundColor: 'rgba(26, 26, 46, 0.95)',
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  headerTitle: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-    marginBottom: 5,
-    fontFamily: 'System',
-    letterSpacing: 0.5,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#999',
-    textAlign: 'center',
-    marginBottom: 25,
-    fontFamily: 'System',
-    fontWeight: '400',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 15,
-    padding: 15,
-    marginHorizontal: 5,
-    borderLeftWidth: 4,
-    alignItems: 'center',
-  },
-  statTitle: {
-    fontSize: 14,
-    color: '#bbb',
-    fontWeight: '600',
-    marginBottom: 4,
-    fontFamily: 'System',
-    letterSpacing: 0.3,
-  },
-  statValue: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 2,
-    fontFamily: 'System',
-  },
-  statSubtitle: {
-    fontSize: 12,
-    color: '#888',
-    fontFamily: 'System',
-    fontWeight: '400',
-  },
-  listContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 100,
-  },
-  mealCard: {
-    backgroundColor: 'rgba(255,255,255,0.09)',
-    borderRadius: 18,
-    marginBottom: 16,
-    padding: 16,
-    shadowColor: '#222',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.18,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-  mealCardContent: {},
-  mealCardPhoto: {
-    width: '100%',
-    height: 150,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  mealTypeBadge: {
-    backgroundColor: '#4ecdc4',
-    borderRadius: 12,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    alignSelf: 'flex-start',
-    marginBottom: 10,
-  },
-  mealTypeBadgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-    fontFamily: 'System',
-  },
-  notesContainer: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 8,
-    padding: 8,
-    marginBottom: 10,
-  },
-  notesText: {
-    color: '#bbb',
-    fontSize: 13,
-    fontStyle: 'italic',
-    fontFamily: 'System',
-  },
-  mealHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  mealName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-    flex: 1,
-    fontFamily: 'System',
-    letterSpacing: 0.2,
-  },
-  caloriesBadge: {
-    backgroundColor: '#ff6b6b',
-    borderRadius: 12,
-    paddingVertical: 2,
-    paddingHorizontal: 10,
-    marginLeft: 8,
-  },
-  caloriesText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 13,
-    fontFamily: 'System',
-  },
-  macroRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  macroItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  macroLabel: {
-    color: '#bbb',
-    fontSize: 13,
-    marginBottom: 2,
-    fontFamily: 'System',
-    fontWeight: '500',
-  },
-  macroValue: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 15,
-    fontFamily: 'System',
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  timeStamp: {
-    fontSize: 12,
-    color: '#aaa',
-    fontFamily: 'System',
-    fontWeight: '400',
-  },
-  deleteButton: {
-    padding: 6,
-    backgroundColor: '#ff6b6b',
-    borderRadius: 8,
-    marginLeft: 10,
-  },
-  deleteButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 13,
-    fontFamily: 'System',
-  },
-  fab: {
-    position: 'absolute',
-    right: 24,
-    bottom: 34,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#4ecdc4',
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.28,
-    shadowRadius: 6,
-  },
-  fabText: {
-    fontSize: 32,
-    color: '#fff',
-    fontWeight: 'bold',
-    marginTop: -2,
-    fontFamily: 'System',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.32)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#202040',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 22,
-    paddingBottom: 32,
-    minHeight: 380,
-    elevation: 10,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 18,
-  },
-  modalTitle: {
-    fontSize: 20,
-    color: '#fff',
-    fontWeight: 'bold',
-    fontFamily: 'System',
-    letterSpacing: 0.3,
-  },
-  closeButton: {
-    padding: 6,
-    borderRadius: 12,
-  },
-  closeButtonText: {
-    color: '#fff',
-    fontSize: 20,
-    fontFamily: 'System',
-  },
-  input: {
-    backgroundColor: '#282850',
-    borderRadius: 10,
-    padding: 12,
-    color: '#fff',
-    marginBottom: 12,
-    fontSize: 15,
-    fontFamily: 'System',
-    fontWeight: '400',
-  },
-  inputRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  inputHalf: {
-    flex: 1,
-    backgroundColor: '#282850',
-    borderRadius: 10,
-    padding: 12,
-    color: '#fff',
-    fontSize: 15,
-    marginRight: 8,
-    fontFamily: 'System',
-    fontWeight: '400',
-  },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 18,
-  },
-  saveButton: {
-    backgroundColor: '#4ecdc4',
-    paddingVertical: 10,
-    paddingHorizontal: 22,
-    borderRadius: 12,
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-    fontFamily: 'System',
-    letterSpacing: 0.5,
-  },
-  cancelButton: {
-    backgroundColor: '#282850',
-    paddingVertical: 10,
-    paddingHorizontal: 22,
-    borderRadius: 12,
-    marginLeft: 10,
-  },
-  cancelButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-    fontFamily: 'System',
-    letterSpacing: 0.5,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-    marginTop: 50,
-  },
-  emptyTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-    marginBottom: 12,
-    fontFamily: 'System',
-    letterSpacing: 0.5,
-  },
-  emptySubtitle: {
-    fontSize: 16,
-    color: '#bbb',
-    textAlign: 'center',
-    marginBottom: 30,
-    lineHeight: 22,
-    fontFamily: 'System',
-    fontWeight: '400',
-  },
-  addFirstMealButton: {
-    backgroundColor: '#4ecdc4',
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 25,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
-  addFirstMealButtonText: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    fontFamily: 'System',
-    letterSpacing: 0.5,
-  },
-  quickMealsSection: {
-    marginTop: 20,
-    paddingHorizontal: 16,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    fontFamily: 'System',
-    letterSpacing: 0.3,
-  },
-  quickMealsScroll: {
-    paddingVertical: 5,
-  },
-  quickMealCard: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 15,
-    padding: 15,
-    marginRight: 10,
-    width: 120,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  quickMealButton: {
-    alignItems: 'center',
-  },
-  quickMealIcon: {
-    fontSize: 28,
-    marginBottom: 8,
-  },
-  quickMealName: {
-    fontSize: 14,
-    color: '#fff',
-    fontWeight: 'bold',
-    marginBottom: 4,
-    fontFamily: 'System',
-    textAlign: 'center',
-  },
-  quickMealCalories: {
-    fontSize: 12,
-    color: '#4ecdc4',
-    fontWeight: '600',
-    fontFamily: 'System',
-  },
-  categoryFilter: {
-    flexDirection: 'row',
-    marginBottom: 15,
-    paddingHorizontal: 16,
-  },
-  categoryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-
-  
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#202040',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 22,
-    maxHeight: '90%',
-    elevation: 10,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 20,
-    color: '#fff',
-    fontWeight: 'bold',
-    fontFamily: 'System',
-    letterSpacing: 0.3,
-  },
-  closeButton: {
-    padding: 6,
-    borderRadius: 12,
-  },
-  closeButtonText: {
-    color: '#fff',
-    fontSize: 20,
-    fontFamily: 'System',
-  },
-  
-  // Photo Section Styles
-  photoSection: {
-    marginBottom: 20,
-  },
-  sectionLabel: {
-    fontSize: 16,
-    color: '#fff',
-    fontWeight: '600',
-    marginBottom: 10,
-    fontFamily: 'System',
-  },
-  addPhotoButton: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 15,
-    padding: 20,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#4ecdc4',
-    borderStyle: 'dashed',
-  },
-  addPhotoText: {
-    color: '#4ecdc4',
-    fontSize: 16,
-    fontWeight: '600',
-    marginTop: 8,
-    fontFamily: 'System',
-  },
-  photoContainer: {
-    position: 'relative',
-    borderRadius: 15,
-    overflow: 'hidden',
-  },
-  mealPhoto: {
-    width: '100%',
-    height: 200,
-    borderRadius: 15,
-  },
-  removePhotoButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    backgroundColor: 'rgba(255,0,0,0.8)',
-    borderRadius: 15,
-    width: 30,
-    height: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  removePhotoText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  
-  // Meal Type Styles
-  mealTypeContainer: {
-    marginBottom: 20,
-  },
-  mealTypeLabel: {
-    fontSize: 16,
-    color: '#fff',
-    fontWeight: '600',
-    marginBottom: 10,
-    fontFamily: 'System',
-  },
-  mealTypeButtons: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  mealTypeButton: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  selectedMealTypeButton: {
-    backgroundColor: '#4ecdc4',
-    borderColor: '#4ecdc4',
-  },
-  mealTypeText: {
-    color: '#bbb',
-    fontSize: 14,
-    fontWeight: '500',
-    fontFamily: 'System',
-  },
-  selectedMealTypeText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  
-  // Input Styles
-  input: {
-    backgroundColor: '#282850',
-    borderRadius: 10,
-    padding: 12,
-    color: '#fff',
-    marginBottom: 15,
-    fontSize: 15,
-    fontFamily: 'System',
-    fontWeight: '400',
-  },
-  inputRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 15,
-  },
-  inputHalf: {
-    flex: 1,
-    backgroundColor: '#282850',
-    borderRadius: 10,
-    padding: 12,
-    color: '#fff',
-    fontSize: 15,
-    marginRight: 8,
-    fontFamily: 'System',
-    fontWeight: '400',
-  },
-  notesInput: {
-    height: 80,
-    textAlignVertical: 'top',
-  },
-  
-  // New UI Styles
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 30,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 25,
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'center',
-  },
-  addButton: {
-    padding: 8,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  statIconContainer: {
-    marginBottom: 8,
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  quickActionsSection: {
-    paddingHorizontal: 20,
-    marginBottom: 30,
-  },
-  quickActionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 12,
-    marginTop: 16,
-  },
-  quickActionCard: {
-    width: '48%',
-    padding: 20,
-    borderRadius: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  quickActionIcon: {
-    fontSize: 32,
-    marginBottom: 12,
-  },
-  quickActionText: {
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  mealsSection: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  mealsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  viewAllButton: {
-    padding: 8,
-  },
-  viewAllText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  emptyContainer: {
-    padding: 40,
-    borderRadius: 16,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  addFirstMealButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-  },
-  addFirstMealButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-
-  // Action Buttons
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 20,
-    marginBottom: 10,
-  },
-  saveButton: {
-    backgroundColor: '#4ecdc4',
-    paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 12,
-    flex: 1,
-    marginLeft: 10,
-    alignItems: 'center',
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-    fontFamily: 'System',
-    letterSpacing: 0.5,
-  },
-  cancelButton: {
-    backgroundColor: '#282850',
-    paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 12,
-    flex: 1,
-    marginRight: 10,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-    fontFamily: 'System',
-    letterSpacing: 0.5,
-  },
-});
-
 export default DietLog;
+
+
+// ---------------------- UPDATED STYLES ----------------------
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#001f3f' },
+  mainVideoContainer: { width: '100%', height: 250 },
+  video: { ...StyleSheet.absoluteFillObject },
+  videoOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,31,57,0.5)', padding: 20, justifyContent: 'flex-end' },
+  workoutTitle: { fontSize: 28, fontWeight: '800', color: '#ffffff', marginBottom: 6 },
+  workoutSubtitle: { color: '#FFC107', fontSize: 14, fontWeight: '500' },
+  statsRowWrapper: { paddingHorizontal: 16, marginTop: 16 },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  caloriesCard: { 
+    flex: 1, 
+    backgroundColor: '#002b5c', 
+    borderRadius: 16, 
+    padding: 12, 
+    marginRight: 8, 
+    shadowColor: '#000', 
+    shadowOpacity: 0.2, 
+    shadowRadius: 6, 
+    shadowOffset: { width: 0, height: 3 }, 
+    elevation: 4 
+  },
+  cardHeading: { color: '#ffffff', fontSize: 16, fontWeight: 'bold', marginBottom: 8 },
+  caloriesNumRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  caloriesNumCol: { alignItems: 'center' },
+  caloriesValue: { color: '#ffffff', fontSize: 18, fontWeight: 'bold' },
+  caloriesValueRemaining: { color: '#FFC107', fontSize: 18, fontWeight: 'bold' },
+  caloriesLabel: { color: '#aaa', fontSize: 12 },
+  calorieProgressTrack: { backgroundColor: '#002b5c', height: 6, borderRadius: 3, marginVertical: 8 },
+  calorieProgressFill: { height: 6, borderRadius: 3, backgroundColor: '#FFC107' },
+  calorieGoalText: { color: '#aaa', fontSize: 10, marginTop: 2 },
+  macrosCard: { 
+    flex: 1, 
+    backgroundColor: '#002b5c', 
+    borderRadius: 16, 
+    padding: 12, 
+    marginLeft: 8 
+  },
+  macroRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 6 },
+  macroLabel: { color: '#aaa', fontSize: 14, width: 60 },
+  progressBarBackground: { flex: 1, height: 6, backgroundColor: '#002b5c', borderRadius: 3, marginHorizontal: 8 },
+  progressBarFill: { height: 6, borderRadius: 3 },
+  macroValue: { color: '#aaa', fontSize: 12, width: 50, textAlign: 'right' },
+  actionRow: { 
+    paddingHorizontal: 16, 
+    marginTop: 16, 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between' 
+  },
+  primaryBtn: { 
+    backgroundColor: '#FFC107', 
+    paddingVertical: 10, 
+    paddingHorizontal: 16, 
+    borderRadius: 12, 
+    minWidth: 120, 
+    alignItems: 'center' 
+  },
+  primaryBtnText: { color: '#001f3f', fontWeight: '800' },
+  ghostBtn: { 
+    backgroundColor: '#002b5c', 
+    paddingVertical: 10, 
+    paddingHorizontal: 12, 
+    borderRadius: 12, 
+    borderWidth: 1, 
+    borderColor: '#001f3f', 
+    marginLeft: 8, 
+    alignItems: 'center' 
+  },
+  ghostBtnText: { color: '#aaa', fontWeight: '700' },
+  section: { marginTop: 18, paddingHorizontal: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: '800', color: '#ffffff', marginBottom: 10 },
+  mealHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  mealHeaderTitle: { color: '#ffffff', fontWeight: '800' },
+  mealHeaderCount: { color: '#aaa', fontWeight: '700' },
+  emptyMealRow: { backgroundColor: '#002b5c', padding: 12, borderRadius: 10 },
+  emptyMealText: { color: '#aaa' },
+  mealListItem: { 
+    backgroundColor: '#002b5c', 
+    borderRadius: 12, 
+    padding: 10, 
+    marginRight: 12, 
+    width: Math.min(320, width * 0.8), 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    shadowColor: '#000', 
+    shadowOpacity: 0.12, 
+    shadowRadius: 6, 
+    shadowOffset: { width: 0, height: 3 }, 
+    elevation: 4 
+  },
+  mealThumb: { 
+    width: 70, 
+    height: 70, 
+    borderRadius: 14, 
+    overflow: 'hidden', 
+    backgroundColor: '#002b5c', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    marginRight: 12 
+  },
+  mealImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+  mealPlaceholderIcon: { fontSize: 26, color: '#aaa' },
+  mealInfo: { flex: 1 },
+  mealName: { color: '#ffffff', fontWeight: '800', fontSize: 14 },
+  mealStats: { color: '#aaa', marginTop: 4, fontSize: 12, fontWeight: '600' },
+  modalWrap: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' },
+  modalContent: { backgroundColor: '#002b5c', padding: 16, borderTopLeftRadius: 16, borderTopRightRadius: 16 },
+  modalTitle: { color: '#ffffff', fontSize: 18, fontWeight: '800', marginBottom: 12 },
+  mealTypeRow: { flexDirection: 'row', marginBottom: 10 },
+  mealTypeBtn: { 
+    paddingVertical: 8, 
+    paddingHorizontal: 10, 
+    borderRadius: 10, 
+    backgroundColor: '#002b5c', 
+    marginRight: 8 
+  },
+  mealTypeBtnActive: { backgroundColor: '#FFC107' },
+  mealTypeBtnText: { color: '#aaa', fontWeight: '700', fontSize: 12 },
+  mealTypeBtnTextActive: { color: '#001f3f' },
+  input: { 
+    backgroundColor: '#002b5c', 
+    paddingVertical: 10, 
+    paddingHorizontal: 12, 
+    borderRadius: 10, 
+    color: '#ffffff', 
+    marginBottom: 8 
+  },
+  smallInput: { flex: 1, marginRight: 8 },
+  rowInputs: { flexDirection: 'row', justifyContent: 'space-between' },
+  photoRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 12 },
+  photoBtn: { 
+    backgroundColor: '#FFC107', 
+    paddingVertical: 8, 
+    paddingHorizontal: 12, 
+    borderRadius: 10, 
+    marginRight: 10 
+  },
+  photoBtnText: { color: '#001f3f', fontWeight: '800' },
+  photoPreview: { width: 56, height: 56, borderRadius: 10 },
+  photoPreviewPlaceholder: { 
+    width: 56, 
+    height: 56, 
+    borderRadius: 10, 
+    backgroundColor: '#002b5c', 
+    alignItems: 'center', 
+    justifyContent: 'center' 
+  },
+  modalActions: { flexDirection: 'row', justifyContent: 'space-between' },
+  cancelBtn: { 
+    paddingVertical: 12, 
+    paddingHorizontal: 16, 
+    borderRadius: 10, 
+    backgroundColor: '#002b5c', 
+    marginTop: 6 
+  },
+  cancelBtnText: { color: '#ffffff', fontWeight: '700' },
+  saveBtn: { 
+    paddingVertical: 12, 
+    paddingHorizontal: 16, 
+    borderRadius: 10, 
+    backgroundColor: '#FFC107', 
+    marginTop: 6 
+  },
+  saveBtnText: { color: '#001f3f', fontWeight: '800' },
+});

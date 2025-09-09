@@ -14,14 +14,14 @@ import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useAuth } from '../../context/AuthContext';
 const colors = {
-  background: '#006258',
-  primary: '#2196F3',
-  primaryText: '#ffffff',
-  surface: '#ffffff',
-  text: '#333333',
-  textSecondary: '#666666',
-  border: '#ddd',
-  error: '#ff4d4d',
+  background: '#001f3f',
+  primary: '#FFC107', // Golden Yellow
+  primaryText: '#001f3f', // Dark blue for contrast on yellow
+  surface: '#002b5c', // Card background
+  text: '#ffffff', // White text for dark background
+  textSecondary: 'rgba(255, 255, 255, 0.8)', // Lighter white
+  border: 'rgba(255, 193, 7, 0.3)', // Golden border
+  error: '#ff5252',
 };
 
 // Import the local boy.jpg image using require
@@ -41,7 +41,6 @@ const Profile = () => {
   const tabs = [
     { id: 'profile', title: 'Profile', icon: 'person' },
     { id: 'community', title: 'Community', icon: 'group' },
-  
     { id: 'notifications', title: 'Notifications', icon: 'notifications' },
   ];
 
@@ -49,15 +48,16 @@ const Profile = () => {
   const getUserProfile = async () => {
     return {
       data: {
-        name: 'Jane Doe',
-        email: 'jane.doe@example.com',
-        phone: '123-456-7890',
+        name: 'Abhishekh',
+        email: 'abhishekh@example.com',
+        phone: '987-654-3210',
         membership: 'Premium',
-        memberSince: 'January 2023',
+        memberSince: 'January 2025',
         avatar: boyAvatar, // Assign require image here
       },
     };
   };
+
   const getUserNotifications = async () => {
     return {
       data: [
@@ -66,12 +66,19 @@ const Profile = () => {
           title: 'Welcome!',
           message: 'Thanks for joining the app.',
           read: false,
-          icon: '🔔',
           createdAt: '2025-09-01 10:00',
+        },
+        {
+          id: 2,
+          title: 'New Workout Plan',
+          message: 'Your custom plan is ready!',
+          read: true,
+          createdAt: '2025-09-02 08:30',
         },
       ],
     };
   };
+
   const getCommunityPosts = async () => {
     return {
       data: [
@@ -84,13 +91,34 @@ const Profile = () => {
           likes: 10,
           comments: 2,
         },
+        {
+          id: 2,
+          avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+          user: 'John',
+          time: '1 day ago',
+          content: 'New PR on bench press!',
+          likes: 24,
+          comments: 5,
+        },
       ],
     };
   };
+
   const updateNotificationSettings = async ({ enabled }) => {
     // Mock API update call here
   };
+<<<<<<< HEAD
   const { logout, isAuthenticated } = useAuth();
+=======
+
+  const logout = () => {
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Logout', style: 'destructive', onPress: () => navigation.navigate('Login') },
+    ]);
+  };
+
+>>>>>>> e788a0880468d19c620034dd11ba2f6a46a30aef
   const fetchProfileData = async () => {
     setLoading(true);
     setError(null);
@@ -197,7 +225,7 @@ const Profile = () => {
     phone: '',
     membership: 'Basic',
     memberSince: 'Recently',
-    avatar: require('../../assets/image/boyy.jpg'), // fallback local image
+    avatar: boyAvatar, // fallback local image
   };
 
   const renderProfileTab = () => (
@@ -242,28 +270,26 @@ const Profile = () => {
       <View style={[styles.actionsCard, { backgroundColor: colors.surface }]}>
         <Text style={[styles.actionsTitle, { color: colors.text }]}>Quick Actions</Text>
         <TouchableOpacity style={[styles.actionButton, { borderBottomColor: colors.border }]}>
-          <Icon name="settings" size={24} color={colors.textSecondary} style={styles.actionIcon} />
+          <Icon name="settings" size={24} color={colors.primary} style={styles.actionIcon} />
           <Text style={[styles.actionText, { color: colors.text }]}>Settings</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.actionButton, { borderBottomColor: colors.border }]}>
-          <Icon name="security" size={24} color={colors.textSecondary} style={styles.actionIcon} />
+          <Icon name="security" size={24} color={colors.primary} style={styles.actionIcon} />
           <Text style={[styles.actionText, { color: colors.text }]}>Privacy</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.actionButton, { borderBottomColor: colors.border }]}>
-          <Icon name="help" size={24} color={colors.textSecondary} style={styles.actionIcon} />
+          <Icon name="help" size={24} color={colors.primary} style={styles.actionIcon} />
           <Text style={[styles.actionText, { color: colors.text }]}>Help & Support</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.actionButton, { borderBottomColor: colors.border }]}>
-          <Icon name="info" size={24} color={colors.textSecondary} style={styles.actionIcon} />
+          <Icon name="info" size={24} color={colors.primary} style={styles.actionIcon} />
           <Text style={[styles.actionText, { color: colors.text }]}>About App</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.actionButton, styles.signupButton]}
-          onPress={() => {
-            logout();
-          }}>
-          <Icon name="logout" size={24} color="white" style={styles.actionIcon} />
-          <Text style={[styles.actionText, { color: 'white' }]}>Log Out</Text>
+          style={[styles.actionButton, styles.logoutButton]}
+          onPress={logout}>
+          <Icon name="logout" size={24} color={colors.error} style={styles.actionIcon} />
+          <Text style={[styles.actionText, { color: colors.error }]}>Log Out</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -271,49 +297,51 @@ const Profile = () => {
 
   const renderCommunityTab = () => (
     <View style={styles.tabContent}>
-      <View style={styles.createPostCard}>
+      <View style={[styles.createPostCard, { backgroundColor: colors.surface }]}>
         <TouchableOpacity style={styles.createPostButton}>
-          <Icon name="edit" size={20} color="#666" style={styles.createPostIcon} />
-          <Text style={styles.createPostText}>Share your fitness journey...</Text>
+          <Icon name="edit" size={20} color={colors.primary} style={styles.createPostIcon} />
+          <Text style={[styles.createPostText, { color: colors.textSecondary }]}>Share your fitness journey...</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.postsContainer}>
         {communityPosts && communityPosts.length > 0 ? (
           communityPosts.map((post) => (
-            <View key={post.id} style={styles.postCard}>
+            <View key={post.id} style={[styles.postCard, { backgroundColor: colors.surface }]}>
               <View style={styles.postHeader}>
-                <Image source={{ uri: post.avatar || post.userAvatar }} style={styles.postAvatar} />
+                <Image 
+                  source={{ uri: post.avatar }} 
+                  style={styles.postAvatar} 
+                  defaultSource={boyAvatar} // Fallback image
+                />
                 <View style={styles.postUserInfo}>
-                  <Text style={styles.postUserName}>{post.user || post.userName}</Text>
-                  <Text style={styles.postTime}>{post.time || post.createdAt}</Text>
+                  <Text style={[styles.postUserName, { color: colors.text }]}>{post.user}</Text>
+                  <Text style={[styles.postTime, { color: colors.textSecondary }]}>{post.time}</Text>
                 </View>
               </View>
 
-              <Text style={styles.postContent}>{post.content || post.message}</Text>
-
-              {post.image && <Image source={{ uri: post.image }} style={styles.postImage} />}
+              <Text style={[styles.postContent, { color: colors.text }]}>{post.content}</Text>
 
               <View style={styles.postActions}>
                 <TouchableOpacity style={styles.postAction}>
-                  <Icon name="favorite" size={18} color="#2196F3" style={styles.postActionIcon} />
-                  <Text style={styles.postActionText}>{post.likes || 0}</Text>
+                  <Icon name="favorite" size={18} color="#FF6B35" style={styles.postActionIcon} />
+                  <Text style={[styles.postActionText, { color: colors.text }]}>{post.likes}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.postAction}>
-                  <Icon name="chat-bubble" size={18} color="#666" style={styles.postActionIcon} />
-                  <Text style={styles.postActionText}>{post.comments || 0}</Text>
+                  <Icon name="chat-bubble" size={18} color={colors.primary} style={styles.postActionIcon} />
+                  <Text style={[styles.postActionText, { color: colors.text }]}>{post.comments}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.postAction}>
-                  <Icon name="share" size={18} color="#666" style={styles.postActionIcon} />
-                  <Text style={styles.postActionText}>Share</Text>
+                  <Icon name="share" size={18} color={colors.textSecondary} style={styles.postActionIcon} />
+                  <Text style={[styles.postActionText, { color: colors.text }]}>{'Share'}</Text>
                 </TouchableOpacity>
               </View>
             </View>
           ))
         ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No community posts yet</Text>
-            <Text style={styles.emptySubtext}>Be the first to share your fitness journey!</Text>
+          <View style={[styles.emptyState, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.emptyText, { color: colors.text }]}>No community posts yet</Text>
+            <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Be the first to share your fitness journey!</Text>
           </View>
         )}
       </View>
@@ -322,16 +350,16 @@ const Profile = () => {
 
   const renderNotificationsTab = () => (
     <View style={styles.tabContent}>
-      <View style={styles.settingsCard}>
+      <View style={[styles.settingsCard, { backgroundColor: colors.surface }]}>
         <View style={styles.settingItem}>
           <View style={styles.settingInfo}>
-            <Icon name="notifications" size={20} color="#666" style={styles.settingIcon} />
-            <Text style={styles.settingText}>Push Notifications</Text>
+            <Icon name="notifications" size={20} color={colors.primary} style={styles.settingIcon} />
+            <Text style={[styles.settingText, { color: colors.text }]}>Push Notifications</Text>
           </View>
           <Switch
             value={notificationsEnabled}
             onValueChange={handleNotificationToggle}
-            trackColor={{ false: '#767577', true: '#2196F3' }}
+            trackColor={{ false: '#767577', true: colors.primary }}
             thumbColor={notificationsEnabled ? '#fff' : '#f4f3f4'}
           />
         </View>
@@ -342,22 +370,27 @@ const Profile = () => {
           notifications.map((notification) => (
             <TouchableOpacity
               key={notification.id}
-              style={[styles.notificationCard, !notification.read && styles.unreadNotification]}>
+              style={[
+                styles.notificationCard, 
+                { backgroundColor: colors.surface },
+                !notification.read && styles.unreadNotification
+              ]}
+            >
               <View style={styles.notificationIcon}>
-                <Text style={styles.notificationIconText}>{notification.icon || '🔔'}</Text>
+                <Text style={[styles.notificationIconText, { color: colors.primary }]}>{notification.icon || '🔔'}</Text>
               </View>
               <View style={styles.notificationContent}>
-                <Text style={styles.notificationTitle}>{notification.title}</Text>
-                <Text style={styles.notificationMessage}>{notification.message}</Text>
-                <Text style={styles.notificationTime}>{notification.time || notification.createdAt}</Text>
+                <Text style={[styles.notificationTitle, { color: colors.text }]}>{notification.title}</Text>
+                <Text style={[styles.notificationMessage, { color: colors.textSecondary }]}>{notification.message}</Text>
+                <Text style={[styles.notificationTime, { color: colors.textSecondary }]}>{notification.createdAt}</Text>
               </View>
               {!notification.read && <View style={styles.unreadDot} />}
             </TouchableOpacity>
           ))
         ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No notifications yet</Text>
-            <Text style={styles.emptySubtext}>You're all caught up!</Text>
+          <View style={[styles.emptyState, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.emptyText, { color: colors.text }]}>No notifications yet</Text>
+            <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>You're all caught up!</Text>
           </View>
         )}
       </View>
@@ -370,21 +403,22 @@ const Profile = () => {
         {tabs.map((tab) => (
           <TouchableOpacity
             key={tab.id}
-            style={[styles.tab, activeTab === tab.id && styles.activeTab]}>
+            style={[styles.tab, activeTab === tab.id && styles.activeTab]}
+            onPress={() => setActiveTab(tab.id)}
+          >
             <Icon
               name={tab.icon}
-              size={20}
-              color={activeTab === tab.id ? colors.primaryText : colors.primaryText}
+              size={24}
+              color={activeTab === tab.id ? colors.primary : colors.textSecondary}
               style={styles.tabIcon}
-              onPress={() => setActiveTab(tab.id)}
             />
             <Text
               style={[
                 styles.tabText,
-                { color: colors.primaryText },
+                { color: activeTab === tab.id ? colors.primary : colors.textSecondary },
                 activeTab === tab.id && styles.activeTabText,
               ]}
-              onPress={() => setActiveTab(tab.id)}>
+            >
               {tab.title}
             </Text>
           </TouchableOpacity>
@@ -410,33 +444,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 193, 7, 0.2)',
   },
   tab: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginHorizontal: 4,
   },
   activeTab: {
-    backgroundColor: '#2196F3',
+    backgroundColor: 'rgba(255, 193, 7, 0.2)',
   },
   tabIcon: {
-    marginBottom: 5,
+    marginBottom: 6,
   },
   tabText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
   },
   activeTabText: {
-    color: 'white',
+    color: '#FFC107',
   },
   content: {
     flex: 1,
@@ -448,23 +477,19 @@ const styles = StyleSheet.create({
   profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 15,
+    borderRadius: 16,
     padding: 20,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.3)',
   },
   profileAvatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
     marginRight: 15,
+    borderWidth: 2,
+    borderColor: '#FFC107',
   },
   profileInfo: {
     flex: 1,
@@ -486,23 +511,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 8,
+    marginLeft: 10,
   },
   editButtonText: {
     fontSize: 12,
     fontWeight: '600',
   },
   detailsCard: {
-    borderRadius: 15,
+    borderRadius: 16,
     padding: 20,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.3)',
   },
   detailsTitle: {
     fontSize: 18,
@@ -512,31 +532,23 @@ const styles = StyleSheet.create({
   detailItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: 'rgba(255, 193, 7, 0.2)',
   },
   detailLabel: {
     fontSize: 14,
-    color: '#666',
   },
   detailValue: {
     fontSize: 14,
-    color: '#333',
     fontWeight: '500',
   },
   actionsCard: {
-    borderRadius: 15,
+    borderRadius: 16,
     padding: 20,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.3)',
   },
   actionsTitle: {
     fontSize: 18,
@@ -546,7 +558,7 @@ const styles = StyleSheet.create({
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderBottomWidth: 1,
   },
   actionIcon: {
@@ -554,51 +566,41 @@ const styles = StyleSheet.create({
   },
   actionText: {
     fontSize: 16,
+    fontWeight: '500',
+  },
+  logoutButton: {
+    borderBottomWidth: 0,
+    marginTop: 10,
   },
   createPostCard: {
-    backgroundColor: 'white',
-    borderRadius: 15,
+    borderRadius: 16,
     padding: 20,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.3)',
   },
   createPostButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 15,
     paddingHorizontal: 15,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 10,
+    backgroundColor: 'rgba(255, 193, 7, 0.1)',
+    borderRadius: 12,
   },
   createPostIcon: {
     marginRight: 10,
   },
   createPostText: {
     fontSize: 16,
-    color: '#666',
   },
   postsContainer: {
     gap: 15,
   },
   postCard: {
-    backgroundColor: 'white',
-    borderRadius: 15,
+    borderRadius: 16,
     padding: 15,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.2)',
   },
   postHeader: {
     flexDirection: 'row',
@@ -610,6 +612,8 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     marginRight: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.5)',
   },
   postUserInfo: {
     flex: 1,
@@ -617,15 +621,12 @@ const styles = StyleSheet.create({
   postUserName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
   },
   postTime: {
     fontSize: 12,
-    color: '#666',
   },
   postContent: {
     fontSize: 14,
-    color: '#333',
     lineHeight: 20,
     marginBottom: 10,
   },
@@ -639,7 +640,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: 'rgba(255, 193, 7, 0.2)',
     paddingTop: 10,
   },
   postAction: {
@@ -651,21 +652,13 @@ const styles = StyleSheet.create({
   },
   postActionText: {
     fontSize: 14,
-    color: '#666',
   },
   settingsCard: {
-    backgroundColor: 'white',
-    borderRadius: 15,
+    borderRadius: 16,
     padding: 20,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.3)',
   },
   settingItem: {
     flexDirection: 'row',
@@ -681,39 +674,35 @@ const styles = StyleSheet.create({
   },
   settingText: {
     fontSize: 16,
-    color: '#333',
+    fontWeight: '500',
   },
   notificationsContainer: {
     gap: 10,
   },
   notificationCard: {
     flexDirection: 'row',
-    backgroundColor: 'white',
     borderRadius: 12,
     padding: 15,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.2)',
   },
   unreadNotification: {
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'rgba(255, 193, 7, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.4)',
   },
   notificationIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: 'rgba(255, 193, 7, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
   },
   notificationIconText: {
     fontSize: 18,
+    fontWeight: 'bold',
   },
   notificationContent: {
     flex: 1,
@@ -721,31 +710,38 @@ const styles = StyleSheet.create({
   notificationTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 4,
   },
   notificationMessage: {
     fontSize: 14,
-    color: '#666',
     marginBottom: 4,
   },
   notificationTime: {
     fontSize: 12,
-    color: '#999',
   },
   unreadDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#2196F3',
+    backgroundColor: '#FFC107',
     alignSelf: 'center',
+    marginLeft: 8,
   },
-  signupButton: {
-    borderRadius: 10,
-    marginTop: 10,
-    paddingVertical: 15,
-    paddingHorizontal: 15,
-    backgroundColor: colors.primary,
+  emptyState: {
+    borderRadius: 16,
+    padding: 30,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.2)',
+  },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    textAlign: 'center',
   },
   retryButton: {
     backgroundColor: colors.primary,
@@ -753,9 +749,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 25,
     borderRadius: 12,
     alignItems: 'center',
+    marginTop: 20,
   },
   retryButtonText: {
-    color: 'white',
+    color: colors.primaryText,
     fontSize: 16,
     fontWeight: '600',
   },

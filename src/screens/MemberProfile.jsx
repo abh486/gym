@@ -1,5 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Image, I18nManager } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  Image,
+  I18nManager,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
 // Force left-to-right layout if RTL is enabled
@@ -27,36 +37,12 @@ const MemberProfile = () => {
   const [heightUnit, setHeightUnit] = useState('CM');
 
   const steps = [
-    {
-      title: "WHAT'S YOUR NAME?",
-      field: 'name',
-      type: 'text',
-    },
-    {
-      title: "HOW OLD ARE YOU?",
-      field: 'age',
-      type: 'number',
-    },
-    {
-      title: "WHAT'S YOUR GENDER?",
-      field: 'gender',
-      type: 'gender',
-    },
-    {
-      title: "WHAT'S YOUR CURRENT WEIGHT?",
-      field: 'weight',
-      type: 'weight',
-    },
-    {
-      title: "WHAT'S YOUR HEIGHT?",
-      field: 'height',
-      type: 'height',
-    },
-    {
-      title: "WHAT'S YOUR GOAL?",
-      field: 'fitnessGoal',
-      type: 'goal',
-    },
+    { title: "WHAT'S YOUR NAME?", field: 'name', type: 'text' },
+    { title: "HOW OLD ARE YOU?", field: 'age', type: 'number' },
+    { title: "WHAT'S YOUR GENDER?", field: 'gender', type: 'gender' },
+    { title: "WHAT'S YOUR CURRENT WEIGHT?", field: 'weight', type: 'weight' },
+    { title: "WHAT'S YOUR HEIGHT?", field: 'height', type: 'height' },
+    { title: "WHAT'S YOUR GOAL?", field: 'fitnessGoal', type: 'goal' },
   ];
 
   const goals = [
@@ -64,7 +50,6 @@ const MemberProfile = () => {
     { title: "Get in shape", subtitle: "Build your fitness and discipline from the ground up" },
     { title: "Build Muscle", subtitle: "Increase muscle size and strength" },
     { title: "Get Lean", subtitle: "Lose body fat and become more defined" },
-
   ];
 
   const currentStepData = steps[currentStep];
@@ -97,8 +82,8 @@ const MemberProfile = () => {
     }
 
     if (currentField === 'height') {
-      const height = parseFloat(value);
-      if (isNaN(height) || height < 50 || height > 300) {
+      const h = parseFloat(value);
+      if (isNaN(h) || h < 50 || h > 300) {
         Alert.alert('Invalid Height', 'Please enter a valid height.');
         return false;
       }
@@ -126,13 +111,14 @@ const MemberProfile = () => {
   };
 
   const handleSkip = () => {
-    navigation.goBack();
+    navigation.navigate('MainTabs');
   };
 
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000)); // simulate network delay
+      // simulate network delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       navigation.navigate('MainTabs');
     } catch (err) {
       Alert.alert('Profile Setup Failed', 'An error occurred. Please try again.');
@@ -155,8 +141,8 @@ const MemberProfile = () => {
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.textInput}
-              placeholder=""
-              placeholderTextColor="#999"
+              placeholder="Type here..."
+              placeholderTextColor="#888"
               value={formData[currentStepData.field]}
               onChangeText={updateFormData}
               autoFocus={true}
@@ -170,8 +156,8 @@ const MemberProfile = () => {
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.textInput}
-              placeholder=""
-              placeholderTextColor="#999"
+              placeholder="Type here..."
+              placeholderTextColor="#888"
               keyboardType="numeric"
               value={formData[currentStepData.field]}
               onChangeText={updateFormData}
@@ -230,48 +216,29 @@ const MemberProfile = () => {
           </View>
         );
 
-      case 'weight':
+      case 'weight': {
+        const isWeight = true;
+        const unit = weightUnit;
         return (
-          <View style={styles.weightContainer}>
+          <View style={styles.measureContainer}>
             <View style={styles.unitToggle}>
-              <TouchableOpacity
-                style={[
-                  styles.unitButton,
-                  weightUnit === 'KG' && styles.unitSelected,
-                ]}
-                onPress={() => setWeightUnit('KG')}
-              >
-                <Text
-                  style={[
-                    styles.unitText,
-                    weightUnit === 'KG' && styles.unitTextSelected,
-                  ]}
+              {(['KG', 'LBS']).map((u) => (
+                <TouchableOpacity
+                  key={u}
+                  style={[styles.unitButton, unit === u && styles.unitSelected]}
+                  onPress={() => setWeightUnit(u)}
                 >
-                  KG
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.unitButton,
-                  weightUnit === 'LBS' && styles.unitSelected,
-                ]}
-                onPress={() => setWeightUnit('LBS')}
-              >
-                <Text
-                  style={[
-                    styles.unitText,
-                    weightUnit === 'LBS' && styles.unitTextSelected,
-                  ]}
-                >
-                  LBS
-                </Text>
-              </TouchableOpacity>
+                  <Text style={[styles.unitText, unit === u && styles.unitTextSelected]}>
+                    {u}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.textInput}
-                placeholder=""
-                placeholderTextColor="#999"
+                placeholder="Enter weight"
+                placeholderTextColor="#888"
                 keyboardType="numeric"
                 value={formData.weight}
                 onChangeText={updateFormData}
@@ -279,6 +246,7 @@ const MemberProfile = () => {
               />
               <View style={styles.inputLine} />
             </View>
+
             <View style={styles.bmiContainer}>
               <Text style={styles.bmiLabel}>YOUR CURRENT BMI</Text>
               <Text style={styles.bmiValue}>00.0</Text>
@@ -288,49 +256,31 @@ const MemberProfile = () => {
             </View>
           </View>
         );
+      }
 
-      case 'height':
+      case 'height': {
+        const isWeight = false;
+        const unit = heightUnit;
         return (
           <View style={styles.heightContainer}>
             <View style={styles.unitToggle}>
-              <TouchableOpacity
-                style={[
-                  styles.unitButton,
-                  heightUnit === 'CM' && styles.unitSelected,
-                ]}
-                onPress={() => setHeightUnit('CM')}
-              >
-                <Text
-                  style={[
-                    styles.unitText,
-                    heightUnit === 'CM' && styles.unitTextSelected,
-                  ]}
+              {(['CM', 'FT']).map((u) => (
+                <TouchableOpacity
+                  key={u}
+                  style={[styles.unitButton, unit === u && styles.unitSelected]}
+                  onPress={() => setHeightUnit(u)}
                 >
-                  CM
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.unitButton,
-                  heightUnit === 'FT' && styles.unitSelected,
-                ]}
-                onPress={() => setHeightUnit('FT')}
-              >
-                <Text
-                  style={[
-                    styles.unitText,
-                    heightUnit === 'FT' && styles.unitTextSelected,
-                  ]}
-                >
-                  FT
-                </Text>
-              </TouchableOpacity>
+                  <Text style={[styles.unitText, unit === u && styles.unitTextSelected]}>
+                    {u}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.textInput}
-                placeholder=""
-                placeholderTextColor="#999"
+                placeholder="Enter height"
+                placeholderTextColor="#888"
                 keyboardType="numeric"
                 value={formData.height}
                 onChangeText={updateFormData}
@@ -340,6 +290,7 @@ const MemberProfile = () => {
             </View>
           </View>
         );
+      }
 
       case 'goal':
         return (
@@ -366,50 +317,45 @@ const MemberProfile = () => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: '#006258' }]}>
+    <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Text style={[styles.backIcon, { color: '#2196F3' }]}>‹</Text>
+          <Text style={styles.backIcon}>‹</Text>
         </TouchableOpacity>
 
-        <View style={[styles.progressBar, { backgroundColor: '#CCCCCC' }]}>
+        <View style={styles.progressBar}>
           <View
             style={[
               styles.progressFill,
-              {
-                width: `${((currentStep + 1) / totalSteps) * 100}%`,
-                backgroundColor: '#2196F3',
-              },
+              { width: `${((currentStep + 1) / totalSteps) * 100}%` },
             ]}
           />
         </View>
 
         <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-          <Text style={[styles.skipText, { color: '#2196F3' }]}>Skip</Text>
+          <Text style={styles.skipText}>Skip</Text>
         </TouchableOpacity>
       </View>
 
       {/* Main Content */}
       <View style={styles.content}>
-        <Text style={[styles.question, { color: '#FFFFFF' }]}>
-          {currentStepData.title}
-        </Text>
+        <Text style={styles.question}>{currentStepData.title}</Text>
         {renderInput()}
       </View>
 
       {/* Next Button */}
       <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={[styles.nextButton, { backgroundColor: '#2196F3' }]}
+          style={styles.nextButton}
           onPress={handleNext}
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color="#001f3f" />
           ) : (
-            <Text style={[styles.nextButtonText, { color: '#FFFFFF' }]}>
-              Next
+            <Text style={styles.nextButtonText}>
+              {isLastStep ? 'Finish' : 'Next'}
             </Text>
           )}
         </TouchableOpacity>
@@ -419,9 +365,7 @@ const MemberProfile = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1, backgroundColor: '#001f3f' }, // deep navy
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -430,73 +374,53 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingBottom: 20,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backIcon: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
+  backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
+  backIcon: { fontSize: 26, fontWeight: 'bold', color: '#FFC107' }, // gold
   progressBar: {
     flex: 1,
-    height: 4,
-    borderRadius: 2,
+    height: 6,
+    borderRadius: 3,
     marginHorizontal: 20,
+    backgroundColor: 'rgba(255,255,255,0.12)',
   },
   progressFill: {
     height: '100%',
-    borderRadius: 2,
+    borderRadius: 3,
+    backgroundColor: '#FFC107',
   },
-  skipButton: {
-    paddingHorizontal: 10,
-  },
-  skipText: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
+  skipButton: { paddingHorizontal: 10 },
+  skipText: { fontSize: 16, fontWeight: '600', color: '#FFC107' },
+  content: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 },
   question: {
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 40,
     textTransform: 'uppercase',
+    color: '#FFF',
   },
-  inputContainer: {
-    width: '100%',
-    alignItems: 'center',
-  },
+  inputContainer: { width: '100%', alignItems: 'center' },
   textInput: {
     width: '100%',
     fontSize: 18,
-    color: '#FFFFFF',
+    color: '#FFF',
     textAlign: 'center',
-    paddingVertical: 10,
+    paddingVertical: 12,
   },
-  inputLine: {
-    width: '100%',
-    height: 1,
-    backgroundColor: '#FFFFFF',
-    marginTop: 5,
-  },
-  genderContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    marginTop: 20,
-  },
+  inputLine: { width: '100%', height: 1, backgroundColor: '#FFFFFF', marginTop: 5 },
+  genderContainer: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', marginTop: 20 },
   genderOption: {
     alignItems: 'center',
     padding: 20,
+    backgroundColor: '#002b5c',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 5,
+    minWidth: 120,
   },
+  genderSelected: { borderWidth: 2, borderColor: '#FFC107' },
   genderImage: {
     width: 80,
     height: 80,
@@ -507,11 +431,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     overflow: 'hidden',
   },
-  genderImageStyle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-  },
+  genderImageStyle: { width: 80, height: 80, borderRadius: 40 },
   radioButton: {
     width: 20,
     height: 20,
@@ -520,41 +440,20 @@ const styles = StyleSheet.create({
     borderColor: '#2196F3',
     marginBottom: 10,
   },
-  radioSelected: {
-    backgroundColor: '#2196F3',
-  },
-  genderText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#FFFFFF',
-  },
-  weightContainer: {
-    width: '100%',
-    alignItems: 'center',
-  },
+  radioSelected: { backgroundColor: '#2196F3' },
+  genderText: { fontSize: 16, fontWeight: '500', color: '#FFF' },
+  measureContainer: { width: '100%', alignItems: 'center' },
   unitToggle: {
     flexDirection: 'row',
-    backgroundColor: '#004D40',
+    backgroundColor: '#002b5c',
     borderRadius: 8,
     padding: 4,
     marginBottom: 30,
   },
-  unitButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 6,
-  },
-  unitSelected: {
-    backgroundColor: '#2196F3',
-  },
-  unitText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#FFFFFF',
-  },
-  unitTextSelected: {
-    color: '#FFF',
-  },
+  unitButton: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 6 },
+  unitSelected: { backgroundColor: '#FFC107' },
+  unitText: { fontSize: 16, fontWeight: '600', color: '#FFF' },
+  unitTextSelected: { color: '#001f3f' },
   bmiContainer: {
     alignItems: 'center',
     marginTop: 30,
@@ -562,13 +461,13 @@ const styles = StyleSheet.create({
   bmiLabel: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: '#FFF',
     marginBottom: 10,
   },
   bmiValue: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    color: '#FFF',
     marginBottom: 5,
   },
   bmiMessage: {
@@ -576,48 +475,34 @@ const styles = StyleSheet.create({
     color: '#B2DFDB',
     textAlign: 'center',
   },
-  heightContainer: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  goalsContainer: {
-    width: '100%',
-    gap: 15,
-  },
+  heightContainer: { width: '100%', alignItems: 'center' },
+  goalsContainer: { width: '100%', gap: 15 },
   goalCard: {
-    backgroundColor: '#004D40',
+    backgroundColor: '#002b5c',
     borderRadius: 12,
     padding: 20,
-    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    elevation: 5,
+    marginBottom: 12,
   },
-  goalSelected: {
-    backgroundColor: '#2196F3',
-  },
-  goalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFF',
-    marginBottom: 5,
-  },
-  goalSubtitle: {
-    fontSize: 14,
-    color: '#E0F2F1',
-    opacity: 0.8,
-  },
-  buttonContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
+  goalSelected: { borderWidth: 2, borderColor: '#FFC107' },
+  goalTitle: { fontSize: 18, fontWeight: 'bold', color: '#FFF', marginBottom: 5 },
+  goalSubtitle: { fontSize: 14, color: '#DDD', opacity: 0.9 },
+  buttonContainer: { paddingHorizontal: 20, paddingBottom: 40 },
   nextButton: {
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#FFC107',
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 5,
   },
-  nextButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
+  nextButtonText: { fontSize: 18, fontWeight: 'bold', color: '#001f3f' },
 });
 
 export default MemberProfile;

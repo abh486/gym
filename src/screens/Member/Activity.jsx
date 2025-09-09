@@ -87,7 +87,7 @@ const Activity = () => {
 
   return (
     <LinearGradient
-      colors={['#00786c',  '#006258']}
+      colors={['#001f3f', '#002b5c']}
       style={styles.container}
     >
       <ScrollView
@@ -120,6 +120,9 @@ const Activity = () => {
               ignoreSilentSwitch="ignore"
             />
             
+            {/* 👇 Overlay to darken video behind text/buttons */}
+            <View style={styles.contentOverlay} />
+
             <View style={styles.cardContent}>
               <View style={styles.cardHeader}>
                 <View style={styles.iconContainer}>
@@ -189,6 +192,9 @@ const Activity = () => {
               ignoreSilentSwitch="ignore"
             />
           
+            {/* 👇 Overlay to darken video behind text/buttons */}
+            <View style={styles.contentOverlay} />
+
             <View style={styles.cardContent}>
               <View style={styles.cardHeader}>
                 <View style={styles.iconContainer}>
@@ -311,17 +317,20 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  overlay: {
+  contentOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)', // 👈 Dark transparent overlay for better contrast
+    zIndex: 1,
   },
   cardContent: {
     flex: 1,
     padding: 25,
     justifyContent: 'space-between',
+    zIndex: 2, // 👈 Ensure content is above overlay
   },
   cardHeader: {
     flexDirection: 'row',
@@ -332,7 +341,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: 'white',
-   
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
@@ -397,8 +405,9 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: '#FFC107',
     marginBottom: 10,
+    fontWeight: '600',
   },
   subStat: {
     fontSize: 14,
@@ -418,7 +427,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: '#FFC107',
     borderRadius: 4,
   },
   buttonRow: {
@@ -427,37 +436,37 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   actionButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    backgroundColor: 'rgba(255, 193, 7, 0.25)',
     paddingHorizontal: 25,
     paddingVertical: 12,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderColor: 'rgba(255, 193, 7, 0.4)',
     minWidth: 120,
     alignItems: 'center',
   },
   statsButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: 'rgba(255, 193, 7, 0.15)',
     paddingHorizontal: 25,
     paddingVertical: 12,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: 'rgba(255, 193, 7, 0.3)',
     minWidth: 80,
     alignItems: 'center',
   },
   buttonText: {
-    color: 'white',
+    color: '#FFC107',
     fontWeight: '600',
     fontSize: 14,
   },
   activityStatus: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 193, 7, 0.1)',
     borderRadius: 20,
     padding: 20,
     marginTop: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: 'rgba(255, 193, 7, 0.2)',
   },
   statusRow: {
     flexDirection: 'row',
@@ -478,9 +487,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   activeDot: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#66BB6A',
-    shadowColor: '#4CAF50',
+    backgroundColor: '#FFC107',
+    borderColor: '#FFA000',
+    shadowColor: '#FFC107',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.8,
     shadowRadius: 8,
@@ -503,7 +512,7 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(255, 255, 255, 0.2)',
   },
   streakText: {
-    color: 'white',
+    color: '#FFC107',
     fontSize: 16,
     fontWeight: '600',
   },

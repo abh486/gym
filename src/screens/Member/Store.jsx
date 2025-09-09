@@ -5,7 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
+  Image, 
   TextInput,
   Modal,
   Dimensions,
@@ -49,7 +49,7 @@ const Store = () => {
       reviews: 2847,
       discount: 32,
       badge: "Best Seller",
-      badgeColor: ['#F59E0B', '#F97316'],
+      badgeColor: ['#FFC107', '#FFA000'],
       isNew: false,
       inStock: true
     },
@@ -65,7 +65,7 @@ const Store = () => {
       reviews: 1523,
       discount: 37,
       badge: "Premium",
-      badgeColor: ['#8B5CF6', '#4F46E5'],
+      badgeColor: ['#FF6B35', '#FF5252'],
       isNew: true,
       inStock: true
     },
@@ -81,7 +81,7 @@ const Store = () => {
       reviews: 892,
       discount: 30,
       badge: "Eco",
-      badgeColor: ['#10B981', '#059669'],
+      badgeColor: ['#00C8C8', '#00B0B0'],
       isNew: false,
       inStock: true
     },
@@ -97,7 +97,7 @@ const Store = () => {
       reviews: 634,
       discount: 36,
       badge: "Popular",
-      badgeColor: ['#EC4899', '#BE185D'],
+      badgeColor: ['#FFC107', '#FFA000'],
       isNew: false,
       inStock: false
     },
@@ -113,7 +113,7 @@ const Store = () => {
       reviews: 1247,
       discount: 20,
       badge: "Value",
-      badgeColor: ['#3B82F6', '#06B6D4'],
+      badgeColor: ['#FFC107', '#FFA000'],
       isNew: true,
       inStock: true
     },
@@ -129,7 +129,7 @@ const Store = () => {
       reviews: 756,
       discount: 37,
       badge: "Hot",
-      badgeColor: ['#2196F3', '#1976D2'],
+      badgeColor: ['#FF6B35', '#FF5252'],
       isNew: false,
       inStock: true
     }
@@ -153,7 +153,7 @@ const Store = () => {
       speakers: 15,
       rating: 4.9,
       isPopular: true,
-      gradient: ['#8B5CF6', '#EC4899'],
+      gradient: ['#FFC107', '#FFA000'],
       tags: ["Networking", "Workshops", "Certification"]
     },
     {
@@ -173,7 +173,7 @@ const Store = () => {
       speakers: 3,
       rating: 4.8,
       isPopular: false,
-      gradient: ['#10B981', '#059669'],
+      gradient: ['#00C8C8', '#00B0B0'],
       tags: ["Meditation", "Asanas", "Pranayama"]
     },
     {
@@ -193,7 +193,7 @@ const Store = () => {
       speakers: 8,
       rating: 4.7,
       isPopular: true,
-      gradient: ['#2196F3', '#1976D2'],
+      gradient: ['#FF6B35', '#FF5252'],
       tags: ["Competition", "Prizes", "Community"]
     }
   ];
@@ -274,7 +274,7 @@ const Store = () => {
           <Icon
             name={likedItems.has(product.id) ? 'heart' : 'heart-outline'}
             size={20}
-            color={likedItems.has(product.id) ? '#2196F3' : '#6B7280'}
+            color={likedItems.has(product.id) ? '#FFC107' : '#aaa'}
           />
         </TouchableOpacity>
       </View>
@@ -284,7 +284,7 @@ const Store = () => {
         <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
 
         <View style={styles.ratingContainer}>
-          <Icon name="star" size={14} color="#F59E0B" />
+          <Icon name="star" size={14} color="#FFC107" />
           <Text style={styles.ratingText}>{product.rating}</Text>
           <Text style={styles.reviewsText}>({product.reviews.toLocaleString()})</Text>
         </View>
@@ -336,13 +336,13 @@ const Store = () => {
         />
 
         {event.isPopular && (
-          <View style={[styles.popularBadge, { backgroundColor: '#2196F3' }]}>
+          <View style={[styles.popularBadge, { backgroundColor: '#FFC107' }]}>
             <Icon name="trending-up" size={12} color="white" />
             <Text style={styles.popularText}>Popular</Text>
           </View>
         )}
 
-        <View style={[styles.eventCategoryBadge, { backgroundColor: '#2196F3' }]}>
+        <View style={[styles.eventCategoryBadge, { backgroundColor: '#FFC107' }]}>
           <Text style={styles.eventCategoryText}>{event.category}</Text>
         </View>
       </View>
@@ -353,30 +353,30 @@ const Store = () => {
 
         <View style={styles.eventDetails}>
           <View style={styles.eventDetail}>
-            <Icon name="calendar-outline" size={16} color="#6B7280" />
+            <Icon name="calendar-outline" size={16} color="#aaa" />
             <Text style={styles.eventDetailText}>{event.date}</Text>
           </View>
           <View style={styles.eventDetail}>
-            <Icon name="time-outline" size={16} color="#6B7280" />
+            <Icon name="time-outline" size={16} color="#aaa" />
             <Text style={styles.eventDetailText}>{event.time}</Text>
           </View>
           <View style={styles.eventDetail}>
-            <Icon name="location-outline" size={16} color="#6B7280" />
+            <Icon name="location-outline" size={16} color="#aaa" />
             <Text style={styles.eventDetailText}>{event.city}</Text>
           </View>
         </View>
 
         <View style={styles.eventStats}>
           <View style={styles.eventStat}>
-            <Icon name="people-outline" size={16} color="#6B7280" />
+            <Icon name="people-outline" size={16} color="#aaa" />
             <Text style={styles.eventStatText}>{event.attendees}</Text>
           </View>
           <View style={styles.eventStat}>
-            <Icon name="mic-outline" size={16} color="#6B7280" />
+            <Icon name="mic-outline" size={16} color="#aaa" />
             <Text style={styles.eventStatText}>{event.speakers} speakers</Text>
           </View>
           <View style={styles.eventStat}>
-            <Icon name="star" size={16} color="#F59E0B" />
+            <Icon name="star" size={16} color="#FFC107" />
             <Text style={styles.eventStatText}>{event.rating}</Text>
           </View>
         </View>
@@ -404,7 +404,7 @@ const Store = () => {
     <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
       {/* Hero Section */}
       <View
-        style={[styles.heroSection, { backgroundColor: '#006258' }]}
+        style={[styles.heroSection, { backgroundColor: '#001f3f' }]}
       >
         <View style={styles.heroContent}>
           <Text style={styles.heroTitle}>Fitness Store</Text>
@@ -430,13 +430,13 @@ const Store = () => {
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
-          <Icon name="search" size={20} color="#9CA3AF" />
+          <Icon name="search" size={20} color="#FFC107" />
           <TextInput
             style={styles.searchInput}
             placeholder="Search products..."
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor="#aaa"
           />
         </View>
 
@@ -469,11 +469,11 @@ const Store = () => {
                 <Icon
                   name={category.icon}
                   size={24}
-                  color={selectedCategory === category.id ? 'white' : '#6B7280'}
+                  color={selectedCategory === category.id ? 'white' : '#FFC107'}
                 />
                 <Text style={[
                   styles.categoryName,
-                  { color: selectedCategory === category.id ? 'white' : '#6B7280' }
+                  { color: selectedCategory === category.id ? 'white' : '#FFC107' }
                 ]}>
                   {category.name}
                 </Text>
@@ -507,7 +507,7 @@ const Store = () => {
     <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
       {/* Hero Section */}
       <View
-        style={[styles.heroSection, { backgroundColor: '#006258' }]}
+        style={[styles.heroSection, { backgroundColor: '#001f3f' }]}
       >
         <View style={styles.heroContent}>
           <Text style={styles.heroTitle}>Fitness Events</Text>
@@ -548,7 +548,7 @@ const Store = () => {
               >
                 <Text style={[
                   styles.eventCategoryName,
-                  { color: selectedEventCategory === category.id ? 'white' : '#6B7280' }
+                  { color: selectedEventCategory === category.id ? 'white' : '#FFC107' }
                 ]}>
                   {category.name}
                 </Text>
@@ -577,8 +577,8 @@ const Store = () => {
   );
 
   return (
-    <View style={[styles.container, { backgroundColor: '#006258' }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#006258" />
+    <View style={[styles.container, { backgroundColor: '#001f3f' }]}>
+      <StatusBar barStyle="light-content" backgroundColor="#001f3f" />
 
       {/* Tab Navigation */}
       <View style={styles.tabContainer}>
@@ -594,12 +594,12 @@ const Store = () => {
             <Icon
               name={tab.icon}
               size={20}
-              color={activeTab === tab.id ? '#2196F3' : 'rgba(255,255,255,0.7)'}
+              color={activeTab === tab.id ? '#FFC107' : 'rgba(255,255,255,0.7)'}
               style={styles.tabIcon}
             />
             <Text style={[
               styles.tabText,
-              { color: activeTab === tab.id ? '#2196F3' : 'rgba(255,255,255,0.7)' }
+              { color: activeTab === tab.id ? '#FFC107' : 'rgba(255,255,255,0.7)' }
             ]}>
               {tab.title}
             </Text>
@@ -623,7 +623,7 @@ const Store = () => {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Filters & Sort</Text>
               <TouchableOpacity onPress={() => setShowFilters(false)}>
-                <Icon name="close" size={24} color="#374151" />
+                <Icon name="close" size={24} color="#FFC107" />
               </TouchableOpacity>
             </View>
 
@@ -676,7 +676,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 20,
     paddingTop: 40,
-    backgroundColor: '#006258',
+    backgroundColor: '#001f3f',
   },
   tab: {
     flex: 1,
@@ -691,7 +691,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: 'rgba(255, 193, 7, 0.2)',
     borderRadius: 16,
   },
   tabIcon: {
@@ -708,7 +708,7 @@ const styles = StyleSheet.create({
   tabContent: {
     flex: 1,
     paddingHorizontal: 20,
-    backgroundColor: '#006258',
+    backgroundColor: '#001f3f',
   },
 
   // Hero Section
@@ -764,21 +764,18 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
+    backgroundColor: '#002b5c',
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.3)',
   },
   searchInput: {
     flex: 1,
     marginLeft: 12,
     fontSize: 16,
-    color: '#374151',
+    color: '#fff',
   },
 
   // Increased filter button size here
@@ -791,7 +788,7 @@ const styles = StyleSheet.create({
 
   // Buttons solid blue style for all buttons
   buttonSolidBlue: {
-    backgroundColor: '#2196F3',
+    backgroundColor: '#FFC107',
     paddingVertical: 14,
     justifyContent: 'center',
     alignItems: 'center',
@@ -801,26 +798,26 @@ const styles = StyleSheet.create({
   buttonSolidBlueRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2196F3',
+    backgroundColor: '#FFC107',
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderRadius: 16,
   },
   addToCartText: {
-    color: 'white',
+    color: '#001f3f',
     fontSize: 14,
     fontWeight: '400',
     textAlign: 'center',
     width: '100%',
   },
   bookButtonText: {
-    color: 'white',
+    color: '#001f3f',
     fontSize: 14,
     fontWeight: '600',
     marginRight: 18,
   },
   applyButtonText: {
-    color: 'white',
+    color: '#001f3f',
     fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',
@@ -844,7 +841,7 @@ const styles = StyleSheet.create({
   },
   itemCount: {
     fontSize: 14,
-    color: 'white',
+    color: '#FFC107',
   },
   categoriesScroll: {
     marginHorizontal: -20,
@@ -861,10 +858,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: 100,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#002b5c',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.3)',
   },
   categorySelectedBackground: {
-    backgroundColor: '#2196F3',
+    backgroundColor: '#FFC107',
+    borderColor: '#FFA000',
   },
   categoryName: {
     fontSize: 12,
@@ -883,10 +883,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 16,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#002b5c',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.3)',
   },
   eventCategorySelectedBackground: {
-    backgroundColor: '#2196F3',
+    backgroundColor: '#FFC107',
+    borderColor: '#FFA000',
   },
   eventCategoryName: {
     fontSize: 14,
@@ -903,14 +906,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   productCard: {
-    backgroundColor: 'white',
+    backgroundColor: '#002b5c',
     borderRadius: 20,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 12,
     elevation: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.2)',
   },
   productImageContainer: {
     position: 'relative',
@@ -933,18 +938,18 @@ const styles = StyleSheet.create({
     left: 12,
   },
   discountBadge: {
-    backgroundColor: '#2196F3',
+    backgroundColor: '#FFC107',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
   },
   discountText: {
-    color: 'white',
+    color: '#001f3f',
     fontSize: 10,
     fontWeight: 'bold',
   },
   newBadge: {
-    backgroundColor: '#10B981',
+    backgroundColor: '#00C8C8',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -971,7 +976,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 12,
     right: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     width: 36,
     height: 36,
     borderRadius: 18,
@@ -983,14 +988,14 @@ const styles = StyleSheet.create({
   },
   brandText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: '#FFC107',
     fontWeight: '500',
     marginBottom: 4,
   },
   productName: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: '#fff',
     marginBottom: 8,
     lineHeight: 20,
   },
@@ -1002,13 +1007,13 @@ const styles = StyleSheet.create({
   ratingText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#374151',
+    color: '#FFC107',
     marginLeft: 4,
     marginRight: 4,
   },
   reviewsText: {
     fontSize: 10,
-    color: '#9CA3AF',
+    color: 'rgba(255, 255, 255, 0.7)',
   },
   priceContainer: {
     flexDirection: 'row',
@@ -1018,12 +1023,12 @@ const styles = StyleSheet.create({
   currentPrice: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: '#fff',
     marginRight: 8,
   },
   originalPrice: {
     fontSize: 14,
-    color: '#9CA3AF',
+    color: 'rgba(255, 255, 255, 0.7)',
     textDecorationLine: 'line-through',
   },
   addToCartButton: {
@@ -1037,7 +1042,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   outOfStockText: {
-    color: '#9CA3AF',
+    color: 'rgba(255, 255, 255, 0.5)',
   },
 
   // Events
@@ -1045,15 +1050,17 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   eventCard: {
-    backgroundColor: 'white',
+    backgroundColor: '#002b5c',
     borderRadius: 24,
     overflow: 'hidden',
     marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 16,
     elevation: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.2)',
   },
   eventImageContainer: {
     position: 'relative',
@@ -1105,13 +1112,13 @@ const styles = StyleSheet.create({
   eventName: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: '#fff',
     marginBottom: 8,
     lineHeight: 28,
   },
   eventDescription: {
     fontSize: 14,
-    color: '#6B7280',
+    color: 'rgba(255, 255, 255, 0.8)',
     marginBottom: 16,
     lineHeight: 20,
   },
@@ -1125,7 +1132,7 @@ const styles = StyleSheet.create({
   },
   eventDetailText: {
     fontSize: 14,
-    color: '#6B7280',
+    color: 'rgba(255, 255, 255, 0.8)',
     marginLeft: 8,
   },
   eventStats: {
@@ -1134,7 +1141,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: 'rgba(255, 193, 7, 0.1)',
     borderRadius: 12,
   },
   eventStat: {
@@ -1143,7 +1150,7 @@ const styles = StyleSheet.create({
   },
   eventStatText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: 'rgba(255, 255, 255, 0.8)',
     marginLeft: 4,
     fontWeight: '500',
   },
@@ -1158,12 +1165,12 @@ const styles = StyleSheet.create({
   eventPrice: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: '#fff',
     marginBottom: 2,
   },
   eventOriginalPrice: {
     fontSize: 16,
-    color: '#9CA3AF',
+    color: 'rgba(255, 255, 255, 0.6)',
     textDecorationLine: 'line-through',
   },
   bookButton: {
@@ -1178,7 +1185,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   filterModal: {
-    backgroundColor: 'white',
+    backgroundColor: '#002b5c',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
@@ -1193,7 +1200,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: 'white',
   },
   filterSection: {
     marginBottom: 24,
@@ -1201,28 +1208,28 @@ const styles = StyleSheet.create({
   filterSectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#374151',
+    color: '#FFC107',
     marginBottom: 16,
   },
   sortOption: {
     paddingVertical: 16,
     paddingHorizontal: 16,
     borderRadius: 12,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#002b5c',
     marginBottom: 8,
     borderWidth: 2,
     borderColor: 'transparent',
   },
   selectedSortOption: {
-    backgroundColor: '#F3F4F6',
-    borderColor: '#2196F3',
+    backgroundColor: '#00334d',
+    borderColor: '#FFC107',
   },
   sortOptionText: {
     fontSize: 16,
-    color: '#6B7280',
+    color: '#FFC107',
   },
   selectedSortOptionText: {
-    color: '#2196F3',
+    color: '#FFC107',
     fontWeight: '600',
   },
   applyButton: {
