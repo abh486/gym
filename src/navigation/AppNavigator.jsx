@@ -20,7 +20,7 @@ const AppNavigator = () => {
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{ headerShown: false }}
-        initialRouteName="MemberProfile"
+        initialRouteName="LoginScreen"
       >
         <Stack.Screen 
           name="MainTabs" 

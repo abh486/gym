@@ -506,3 +506,32 @@ const styles = StyleSheet.create({
 });
 
 export default MemberProfile;
+
+
+
+// import React from 'react';
+// import { SafeAreaView, Text, View } from 'react-native';
+
+// const MemberProfile = ({ route }) => {
+//   const { profile } = route.params || {};
+//   return (
+//     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff', padding: 24 }}>
+//       <Text style={{ fontSize: 22, fontWeight: 'bold', marginBottom: 12 }}>
+//         Member Profile
+//       </Text>
+//       {profile ? (
+//         <View>
+//           <Text style={{ fontSize: 16, marginBottom: 6 }}>Name: {profile.name || '-'}</Text>
+//           <Text style={{ fontSize: 16, marginBottom: 6 }}>Email: {profile.email || '-'}</Text>
+//           <Text style={{ fontSize: 12, color: '#6b7280' }}>
+//             Sub: {profile.sub}
+//           </Text>
+//         </View>
+//       ) : (
+//         <Text>No profile data</Text>
+//       )}
+//     </SafeAreaView>
+//   );
+// };
+
+// export default MemberProfile;
