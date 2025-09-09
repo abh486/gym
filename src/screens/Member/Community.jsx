@@ -14,9 +14,10 @@ const Community = () => {
   const [chatMessage, setChatMessage] = useState('');
   const [chatMessages, setChatMessages] = useState({});
 
+  // ✅ Updated Icons — using Ionicons
   const tabs = [
-    { id: 'groups', title: 'Fitness Groups', icon: '👥' },
-    { id: 'trainers', title: 'Find Trainers', icon: '💪' },
+    { id: 'groups', title: 'Fitness Groups', icon: 'people-outline' },
+    { id: 'trainers', title: 'Find Trainers', icon: 'fitness-outline' },
   ];
 
   const fitnessGroups = [
@@ -147,11 +148,11 @@ const Community = () => {
             <Text style={styles.groupActivity}>{group.activity}</Text>
             <View style={styles.groupDetails}>
               <View style={styles.detailItem}>
-                <Icon name="time-outline" size={16} color="#666" />
+                <Icon name="time-outline" size={16} color="#FFC107" />
                 <Text style={styles.detailText}>{group.meetingTime}</Text>
               </View>
               <View style={styles.detailItem}>
-                <Icon name="location-outline" size={16} color="#666" />
+                <Icon name="location-outline" size={16} color="#FFC107" />
                 <Text style={styles.detailText}>{group.location}</Text>
               </View>
             </View>
@@ -188,7 +189,7 @@ const Community = () => {
                   </View>
                 </View>
                 <View style={styles.ratingContainer}>
-                  <Icon name="star" size={16} color="#FFD700" />
+                  <Icon name="star" size={16} color="#FFC107" />
                   <Text style={styles.rating}>{trainer.rating}</Text>
                 </View>
               </View>
@@ -197,15 +198,15 @@ const Community = () => {
               
               <View style={styles.trainerDetails}>
                 <View style={styles.detailItem}>
-                  <Icon name="time-outline" size={16} color="#666" />
+                  <Icon name="time-outline" size={16} color="#FFC107" />
                   <Text style={styles.detailText}>{trainer.experience} experience</Text>
                 </View>
                 <View style={styles.detailItem}>
-                  <Icon name="card-outline" size={16} color="#666" />
+                  <Icon name="card-outline" size={16} color="#FFC107" />
                   <Text style={styles.detailText}>{trainer.price}</Text>
                 </View>
                 <View style={styles.detailItem}>
-                  <Icon name="location-outline" size={16} color="#666" />
+                  <Icon name="location-outline" size={16} color="#FFC107" />
                   <Text style={styles.detailText}>{trainer.location}</Text>
                 </View>
               </View>
@@ -234,7 +235,7 @@ const Community = () => {
             style={styles.backButton}
             onPress={() => setSelectedTrainer(null)}
           >
-            <Icon name="arrow-back" size={24} color="#333" />
+            <Icon name="arrow-back" size={24} color="#FFC107" />
           </TouchableOpacity>
           <View style={styles.chatHeaderInfo}>
             <Text style={styles.chatTrainerName}>{selectedTrainer.name}</Text>
@@ -276,6 +277,7 @@ const Community = () => {
             onChangeText={setChatMessage}
             multiline
             maxLength={500}
+            placeholderTextColor="#aaa"
           />
           <TouchableOpacity 
             style={styles.sendButton}
@@ -291,11 +293,11 @@ const Community = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#006258" />
+      <StatusBar barStyle="light-content" backgroundColor="#001f3f" />
 
       {/* Header */}
       <LinearGradient
-        colors={['#006258', '#008066']}
+        colors={['#001f3f', '#002b5c']}
         style={styles.header}
       >
         <Text style={styles.headerTitle}>Community</Text>
@@ -313,7 +315,7 @@ const Community = () => {
               setSelectedTrainer(null); // Reset trainer selection when switching tabs
             }}
           >
-            <Text style={styles.tabIcon}>{tab.icon}</Text>
+            <Icon name={tab.icon} size={22} color={activeTab === tab.id ? '#FFC107' : 'rgba(255, 255, 255, 0.6)'} />
             <Text style={[styles.tabText, activeTab === tab.id && styles.activeTabText]}>
               {tab.title}
             </Text>
@@ -333,7 +335,7 @@ const Community = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#006258',
+    backgroundColor: '#001f3f',
   },
   header: {
     paddingTop: 50,
@@ -357,8 +359,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
-    backgroundColor: '#006258',
+    borderBottomColor: 'rgba(255, 193, 7, 0.2)',
+    backgroundColor: '#001f3f',
   },
   tab: {
     flex: 1,
@@ -367,23 +369,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   activeTab: {
-    backgroundColor: 'rgba(33, 150, 243, 0.2)',
-  },
-  tabIcon: {
-    fontSize: 20,
-    marginBottom: 5,
+    backgroundColor: 'rgba(255, 193, 7, 0.15)',
   },
   tabText: {
     fontSize: 12,
     fontWeight: '600',
     color: 'rgba(255, 255, 255, 0.6)',
+    marginTop: 6,
   },
   activeTabText: {
-    color: '#2196f3',
+    color: '#FFC107',
   },
   content: {
     flex: 1,
-    backgroundColor: '#006258',
+    backgroundColor: '#001f3f',
   },
   tabContent: {
     padding: 20,
@@ -392,14 +391,16 @@ const styles = StyleSheet.create({
     gap: 15,
   },
   groupCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: '#002b5c',
     borderRadius: 16,
     padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.2)',
   },
   groupHeader: {
     flexDirection: 'row',
@@ -410,15 +411,15 @@ const styles = StyleSheet.create({
   groupName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#fff',
   },
   groupMembers: {
     fontSize: 14,
-    color: '#666',
+    color: '#FFC107',
   },
   groupActivity: {
     fontSize: 16,
-    color: '#2196f3',
+    color: '#FFC107',
     fontWeight: '600',
     marginBottom: 12,
   },
@@ -432,23 +433,23 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: 14,
-    color: '#666',
+    color: '#FFC107',
     marginLeft: 8,
   },
   groupDescription: {
     fontSize: 14,
-    color: '#666',
+    color: 'rgba(255, 255, 255, 0.8)',
     marginBottom: 15,
     lineHeight: 20,
   },
   joinButton: {
-    backgroundColor: '#2196f3',
+    backgroundColor: '#FFC107',
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
   },
   joinButtonText: {
-    color: 'white',
+    color: '#001f3f',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -457,14 +458,16 @@ const styles = StyleSheet.create({
     gap: 15,
   },
   trainerCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: '#002b5c',
     borderRadius: 16,
     padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.2)',
   },
   trainerHeader: {
     flexDirection: 'row',
@@ -478,7 +481,7 @@ const styles = StyleSheet.create({
   trainerName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#fff',
     marginBottom: 4,
   },
   onlineStatus: {
@@ -493,7 +496,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 12,
-    color: '#666',
+    color: '#FFC107',
   },
   ratingContainer: {
     flexDirection: 'row',
@@ -502,12 +505,12 @@ const styles = StyleSheet.create({
   rating: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: '#FFC107',
     marginLeft: 4,
   },
   specialty: {
     fontSize: 16,
-    color: '#2196f3',
+    color: '#FFC107',
     fontWeight: '600',
     marginBottom: 12,
   },
@@ -516,12 +519,12 @@ const styles = StyleSheet.create({
   },
   trainerDescription: {
     fontSize: 14,
-    color: '#666',
+    color: 'rgba(255, 255, 255, 0.8)',
     marginBottom: 15,
     lineHeight: 20,
   },
   chatButton: {
-    backgroundColor: '#2196f3',
+    backgroundColor: '#FFC107',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
@@ -530,7 +533,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   chatButtonText: {
-    color: 'white',
+    color: '#001f3f',
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
@@ -538,15 +541,15 @@ const styles = StyleSheet.create({
   // Chat styles
   chatContainer: {
     flex: 1,
-    backgroundColor: '#006258',
+    backgroundColor: '#001f3f',
   },
   chatHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: '#002b5c',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
+    borderBottomColor: 'rgba(255, 193, 7, 0.3)',
   },
   backButton: {
     marginRight: 15,
@@ -557,7 +560,7 @@ const styles = StyleSheet.create({
   chatTrainerName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#fff',
     marginBottom: 4,
   },
   chatOnlineStatus: {
@@ -566,11 +569,12 @@ const styles = StyleSheet.create({
   },
   chatStatusText: {
     fontSize: 12,
-    color: '#666',
+    color: '#FFC107',
   },
   messagesList: {
     flex: 1,
     padding: 20,
+    backgroundColor: '#001f3f',
   },
   messageContainer: {
     marginBottom: 15,
@@ -578,32 +582,30 @@ const styles = StyleSheet.create({
   },
   userMessage: {
     alignSelf: 'flex-end',
-    backgroundColor: '#2196f3',
+    backgroundColor: '#FFC107',
     borderRadius: 16,
     borderBottomRightRadius: 4,
     padding: 12,
   },
   trainerMessage: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: '#002b5c',
     borderRadius: 16,
     borderBottomLeftRadius: 4,
     padding: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.3)',
   },
   messageText: {
     fontSize: 16,
     lineHeight: 20,
   },
   userMessageText: {
-    color: 'white',
+    color: '#001f3f',
+    fontWeight: '600',
   },
   trainerMessageText: {
-    color: '#333',
+    color: '#fff',
   },
   messageTime: {
     fontSize: 12,
@@ -614,23 +616,26 @@ const styles = StyleSheet.create({
   messageInputContainer: {
     flexDirection: 'row',
     padding: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: '#002b5c',
     alignItems: 'flex-end',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 193, 7, 0.2)',
   },
   messageInput: {
     flex: 1,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: 'rgba(255, 193, 7, 0.4)',
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
     maxHeight: 100,
     marginRight: 12,
-    backgroundColor: 'white',
+    backgroundColor: '#001f3f',
+    color: '#fff',
   },
   sendButton: {
-    backgroundColor: '#2196f3',
+    backgroundColor: '#FFC107',
     width: 44,
     height: 44,
     borderRadius: 22,

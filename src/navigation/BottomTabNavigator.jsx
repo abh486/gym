@@ -10,7 +10,6 @@ import Community from '../screens/Member/Community';
 import Store from '../screens/Member/Store';
 import Profile from '../screens/Member/Profile';
 
-
 const Tab = createBottomTabNavigator();
 
 const BottomTabNavigator = () => {
@@ -18,30 +17,30 @@ const BottomTabNavigator = () => {
   
   return (
     <Tab.Navigator
-                   screenOptions={({ route }) => ({
-               tabBarIcon: ({ focused, color, size }) => {
-                 let iconName;
-       
-                 if (route.name === 'Location') {
-                   iconName = focused ? 'location' : 'location-outline';
-                 } else if (route.name === 'Activity') {
-                   iconName = focused ? 'fitness' : 'fitness-outline';
-                 } else if (route.name === 'Community') {
-                   iconName = focused ? 'people' : 'people-outline';
-                 } else if (route.name === 'Store') {
-                   iconName = focused ? 'bag' : 'bag-outline';
-                 } else if (route.name === 'Profile') {
-                   iconName = focused ? 'person' : 'person-outline';
-                 }
-       
-                 return <Icon name={iconName} size={size} color={color} />;
-               },
-        tabBarActiveTintColor: '#e74c3c',
-        tabBarInactiveTintColor: '#666',
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName;
+    
+          if (route.name === 'Location') {
+            iconName = focused ? 'location' : 'location-outline';
+          } else if (route.name === 'Activity') {
+            iconName = focused ? 'fitness' : 'fitness-outline';
+          } else if (route.name === 'Community') {
+            iconName = focused ? 'people' : 'people-outline';
+          } else if (route.name === 'Store') {
+            iconName = focused ? 'bag' : 'bag-outline';
+          } else if (route.name === 'Profile') {
+            iconName = focused ? 'person' : 'person-outline';
+          }
+    
+          return <Icon name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: '#FFC107', // golden yellow (theme color)
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.6)', // softer white
         tabBarStyle: {
-          backgroundColor: 'white',
+          backgroundColor: '#001f3f', // deep navy (theme background)
           borderTopWidth: 1,
-          borderTopColor: '#f0f0f0',
+          borderTopColor: 'rgba(255,255,255,0.2)', // subtle border
           paddingBottom: Platform.OS === 'ios' ? 20 : 10,
           paddingTop: 5,
           height: Platform.OS === 'ios' ? 85 : 70,
@@ -49,8 +48,8 @@ const BottomTabNavigator = () => {
           elevation: 8,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
+          shadowOpacity: 0.25,
+          shadowRadius: 6,
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -87,7 +86,6 @@ const BottomTabNavigator = () => {
           title: 'Store',
         }}
       />
-
       <Tab.Screen 
         name="Profile" 
         component={Profile}
@@ -99,4 +97,4 @@ const BottomTabNavigator = () => {
   );
 };
 
-export default BottomTabNavigator; 
+export default BottomTabNavigator;

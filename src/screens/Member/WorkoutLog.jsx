@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,9 @@ const { width } = Dimensions.get('window');
 const WorkoutLog = () => {
   const navigation = useNavigation();
 
+  // ✅ Added State to Store Selected Exercises
+  const [selectedExercises, setSelectedExercises] = useState([]);
+
   const equipmentIcons = [
     { id: 1, source: require('../../assets/image/eq1.jpg') },
     { id: 2, source: require('../../assets/image/eq2.jpg') },
@@ -26,12 +29,18 @@ const WorkoutLog = () => {
     { id: 6, source: require('../../assets/image/eq6.jpg') },
   ];
 
+  // ✅ Updated Add Button Handler
+  const handleAddExercise = () => {
+    navigation.navigate('WorkoutPlanDetail', {
+      onSelectExercises: (exercises) => {
+        setSelectedExercises(prev => [...prev, ...exercises]);
+      }
+    });
+  };
+
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#000" />
-
-      {/* Status Bar */}
-      
+      <StatusBar barStyle="light-content" backgroundColor="#001f3f" />
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Main Video Background Section */}
@@ -44,18 +53,15 @@ const WorkoutLog = () => {
             muted
             paused={false}
           />
-          <View style={styles.videoOverlay}>
+          {/* Overlay for better text visibility */}
+          <View style={styles.videoOverlay} />
+          <View style={styles.videoContent}>
             <View style={styles.workoutInfo}>
               <Text style={styles.workoutTitle}>
                 Hamstrings,{'\n'}Chest, Biceps,{'\n'}Abs, Glutes
               </Text>
               <View style={styles.createdInfo}>
                 <Text style={styles.createdText}>🔧 Created for Abhishekh</Text>
-              </View>
-              <View style={styles.workoutStats}>
-                
-                
-              
               </View>
             </View>
           </View>
@@ -77,7 +83,9 @@ const WorkoutLog = () => {
           >
             {equipmentIcons.map((item) => (
               <TouchableOpacity key={item.id} style={styles.equipmentItem}>
-                <Image source={item.source} style={styles.equipmentIcon} />
+                <View style={styles.equipmentIconContainer}>
+                  <Image source={item.source} style={styles.equipmentIcon} />
+                </View>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -88,39 +96,64 @@ const WorkoutLog = () => {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Exercises</Text>
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>9</Text>
+              <Text style={styles.badgeText}>{selectedExercises.length || 9}</Text>
             </View>
             <TouchableOpacity
               style={styles.addButton}
-              onPress={() => navigation.navigate('WorkoutPlanDetail')}
+              onPress={handleAddExercise} // ✅ Updated onPress
             >
               <Text style={styles.addButtonText}>Add</Text>
               <Text style={styles.addButtonIcon}>+</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Running Exercise */}
-          <TouchableOpacity style={styles.exerciseItem}>
-            <View style={styles.exerciseImage}>
-              <Image
-                source={require('../../assets/image/frontraise.jpg')}
-                style={styles.exerciseImageStyle}
-                resizeMode="contain"
-              />
-            </View>
-            <View style={styles.exerciseInfo}>
-              <Text style={styles.exerciseName}>Front raise </Text>
-              <Text style={styles.exerciseDetails}>sholders</Text>
-            </View>
-            <TouchableOpacity style={styles.exerciseMenu}>
-              <Text style={styles.exerciseMenuIcon}>⋯</Text>
+          {/* ✅ Render Selected Exercises */}
+          {selectedExercises.map((item) => (
+            <TouchableOpacity key={item.id} style={styles.exerciseItem}>
+              <View style={styles.exerciseImage}>
+                <Image
+                  source={item.image}
+                  style={styles.exerciseImageStyle}
+                  resizeMode="cover"
+                />
+              </View>
+              <View style={styles.exerciseInfo}>
+                <Text style={styles.exerciseName}>{item.title}</Text>
+                <Text style={styles.exerciseDetails}>{item.tag.label}</Text>
+              </View>
+              <TouchableOpacity style={styles.exerciseMenu}>
+                <Text style={styles.exerciseMenuIcon}>⋯</Text>
+              </TouchableOpacity>
             </TouchableOpacity>
-          </TouchableOpacity>
+          ))}
+
+          {/* ✅ If no selected exercises, show default one */}
+          {selectedExercises.length === 0 && (
+            <TouchableOpacity style={styles.exerciseItem}>
+              <View style={styles.exerciseImage}>
+                <Image
+                  source={require('../../assets/image/frontraise.jpg')}
+                  style={styles.exerciseImageStyle}
+                  resizeMode="cover"
+                />
+              </View>
+              <View style={styles.exerciseInfo}>
+                <Text style={styles.exerciseName}>Front raise</Text>
+                <Text style={styles.exerciseDetails}>Shoulders</Text>
+              </View>
+              <TouchableOpacity style={styles.exerciseMenu}>
+                <Text style={styles.exerciseMenuIcon}>⋯</Text>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
 
       {/* Start Workout Button */}
-      <TouchableOpacity style={styles.startButton}>
+      <TouchableOpacity 
+        style={styles.startButton}
+        onPress={() => navigation.navigate("StartWorkout")}
+      >
         <Text style={styles.startButtonText}>Start Workout</Text>
       </TouchableOpacity>
 
@@ -133,7 +166,7 @@ const WorkoutLog = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#006258',
+    backgroundColor: '#001f3f',
   },
   scrollView: {
     flex: 1,
@@ -147,9 +180,13 @@ const styles = StyleSheet.create({
   },
   videoOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Dark overlay for contrast
+  },
+  videoContent: {
+    ...StyleSheet.absoluteFillObject,
     padding: 24,
     justifyContent: 'flex-end',
+    zIndex: 2,
   },
   workoutInfo: {
     flex: 1,
@@ -161,29 +198,15 @@ const styles = StyleSheet.create({
     color: '#fff',
     lineHeight: 44,
     marginBottom: 16,
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 6,
   },
   createdInfo: {
     marginBottom: 16,
   },
   createdText: {
-    color: '#aaa',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  workoutStats: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  statIcon: {
-    fontSize: 14,
-  },
-  statText: {
-    color: '#fff',
+    color: '#FFC107',
     fontSize: 14,
     fontWeight: '500',
   },
@@ -203,14 +226,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   badge: {
-    backgroundColor: '#333',
-    paddingHorizontal: 8,
+    backgroundColor: 'rgba(255, 193, 7, 0.2)',
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
     marginRight: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.4)',
   },
   badgeText: {
-    color: '#fff',
+    color: '#FFC107',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -220,12 +245,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   addButtonText: {
-    color: '#007AFF',
+    color: '#FFC107',
     fontSize: 16,
     fontWeight: '500',
   },
   addButtonIcon: {
-    color: '#007AFF',
+    color: '#FFC107',
     fontSize: 18,
     fontWeight: '500',
   },
@@ -235,26 +260,42 @@ const styles = StyleSheet.create({
   equipmentItem: {
     marginRight: 12,
   },
-  equipmentIcon: {
+  equipmentIconContainer: {
     width: 60,
     height: 60,
     borderRadius: 12,
-    resizeMode: 'cover',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.3)',
+  },
+  equipmentIcon: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 12,
   },
   exerciseItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#002b5c',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
   exerciseImage: {
     width: 60,
     height: 60,
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
     marginRight: 16,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   exerciseImageStyle: {
     width: '100%',
@@ -271,33 +312,38 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   exerciseDetails: {
-    color: '#aaa',
+    color: '#FFC107',
     fontSize: 14,
   },
   exerciseMenu: {
     padding: 8,
   },
   exerciseMenuIcon: {
-    color: '#aaa',
+    color: '#FFC107',
     fontSize: 18,
   },
   startButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#FFC107',
     marginHorizontal: 20,
     marginBottom: 20,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
+    shadowColor: '#FFC107',
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
   },
   startButtonText: {
-    color: '#fff',
+    color: '#001f3f',
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '800',
   },
   homeIndicator: {
     width: 134,
     height: 5,
-    backgroundColor: '#333',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 3,
     alignSelf: 'center',
     marginBottom: 8,

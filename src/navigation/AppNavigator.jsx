@@ -10,6 +10,7 @@ import LoginScreen from '../screens/LoginScreen';
 import WorkoutLog from '../screens/Member/WorkoutLog';
 import BottomTabNavigator from './BottomTabNavigator';
 import WorkoutPlanDetail from '../screens/Member/WorkoutPlanDetail';
+import StartWorkout from '../screens/Member/StartWorkout';
 // import Training from '../screens/Member/Training'; // 👈 uncomment if exists
 
 const Stack = createNativeStackNavigator();
@@ -33,6 +34,7 @@ const AppNavigator = () => {
         <Stack.Screen name="LoginScreen" component={LoginScreen} />
         <Stack.Screen name="WorkoutLog" component={WorkoutLog} />
         <Stack.Screen name="WorkoutPlanDetail" component={WorkoutPlanDetail} />
+        <Stack.Screen name="StartWorkout" component={StartWorkout} />
       </Stack.Navigator>
     </NavigationContainer>
   );
