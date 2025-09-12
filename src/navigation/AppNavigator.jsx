@@ -11,6 +11,8 @@ import WorkoutLog from '../screens/Member/WorkoutLog';
 import BottomTabNavigator from './BottomTabNavigator';
 import WorkoutPlanDetail from '../screens/Member/WorkoutPlanDetail';
 import StartWorkout from '../screens/Member/StartWorkout';
+import WorkoutStats from '../screens/Member/WorkoutStats';
+import DietStats from '../screens/Member/DietStats';
 // import Training from '../screens/Member/Training'; // 👈 uncomment if exists
 
 const Stack = createNativeStackNavigator();
@@ -20,7 +22,7 @@ const AppNavigator = () => {
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{ headerShown: false }}
-        initialRouteName="LoginScreen"
+        initialRouteName="MemberProfile"
       >
         <Stack.Screen 
           name="MainTabs" 
@@ -35,6 +37,8 @@ const AppNavigator = () => {
         <Stack.Screen name="WorkoutLog" component={WorkoutLog} />
         <Stack.Screen name="WorkoutPlanDetail" component={WorkoutPlanDetail} />
         <Stack.Screen name="StartWorkout" component={StartWorkout} />
+         <Stack.Screen name="WorkoutStats" component={WorkoutStats} />
+         <Stack.Screen name="DietStats" component={DietStats} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -1,3 +1,5 @@
+// LocationMain_Themed.js — Fixed: No Extra Space at Bottom
+
 import React, { useState, useEffect, useRef } from 'react';
 import {
   SafeAreaView,
@@ -12,6 +14,7 @@ import {
   Modal,
   TextInput,
   StyleSheet,
+  Animated,
 } from 'react-native';
 
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -21,7 +24,7 @@ import Geolocation from '@react-native-community/geolocation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PermissionsAndroid } from 'react-native';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const LocationMain = () => {
   const [loading, setLoading] = useState(false);
@@ -34,6 +37,9 @@ const LocationMain = () => {
   const [showGymDetailsModal, setShowGymDetailsModal] = useState(false);
 
   const mapRef = useRef(null);
+  const scrollViewRef = useRef(null);
+
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   const initialRegion = {
     latitude: 28.7041,
@@ -51,6 +57,20 @@ const LocationMain = () => {
       }
     : initialRegion;
 
+  // ✅ Map starts at 40% → grows to 70% when scrolling up
+  const mapHeight = scrollY.interpolate({
+    inputRange: [0, height * 0.7],
+    outputRange: [height * 0.4, height * 0.7], // 40% → 70%
+    extrapolate: 'clamp',
+  });
+
+  // ✅ Card height: starts at 60% → shrinks to 30% as map grows
+  const cardHeight = scrollY.interpolate({
+    inputRange: [0, height * 0.7],
+    outputRange: [height * 0.6, height * 0.3], // 60% → 30%
+    extrapolate: 'clamp',
+  });
+
   useEffect(() => {
     initializeLocation();
   }, []);
@@ -58,7 +78,6 @@ const LocationMain = () => {
   const initializeLocation = async () => {
     setLoading(true);
     setError('');
-
     try {
       const restored = await restoreLocationState();
       if (!restored) {
@@ -79,9 +98,7 @@ const LocationMain = () => {
         permission: permission,
       };
       await AsyncStorage.setItem('userLocation', JSON.stringify(locationData));
-    } catch (error) {
-      // ignored
-    }
+    } catch {}
   };
 
   const restoreLocationState = async () => {
@@ -157,7 +174,6 @@ const LocationMain = () => {
             reject(new Error('Invalid coordinates'));
             return;
           }
-
           const newLocation = { latitude, longitude };
           setUserLocation(newLocation);
           setLocationPermission(true);
@@ -202,10 +218,7 @@ const LocationMain = () => {
     }
     setGymsLoading(true);
     setError('');
-
-    // Simulate gym fetching here. Replace with actual API call.
     try {
-      // Example gyms data - replace or modify as needed
       const exampleGyms = [
         {
           id: '1',
@@ -237,13 +250,26 @@ const LocationMain = () => {
           yearlyPrice: 17999,
           distance: 2.3,
         },
+        {
+          id: '3',
+          name: 'PowerFit Studio',
+          latitude: location.latitude + 0.02,
+          longitude: location.longitude + 0.02,
+          address: '789 Fitness Ave',
+          image:
+            'https://images.unsplash.com/photo-1551434678-e0765915b995?auto=format&fit=crop&w=2070&q=80',
+          type: 'Studio',
+          rating: 4.8,
+          dailyPassPrice: 349,
+          monthlyPrice: 2499,
+          yearlyPrice: 24999,
+          distance: 1.5,
+        },
       ];
-
       const formattedGyms = exampleGyms.map((gym) => ({
         ...gym,
         coordinates: { latitude: gym.latitude, longitude: gym.longitude },
       }));
-
       setGyms(formattedGyms);
       setError('');
     } catch {
@@ -270,16 +296,15 @@ const LocationMain = () => {
     if (gymsLoading) {
       return (
         <View style={{ alignItems: 'center', marginTop: 20 }}>
-          <ActivityIndicator size="small" color="#e74c3c" />
-          <Text style={{ marginTop: 10, fontSize: 14 }}>Loading gyms...</Text>
+          <ActivityIndicator size="small" color="#FFC107" />
+          <Text style={{ marginTop: 10, fontSize: 14, color: '#aaa' }}>Loading gyms...</Text>
         </View>
       );
     }
-
     if (gyms.length === 0) {
       return (
         <View style={styles.noGymsContainer}>
-          <Icon name="fitness-outline" size={60} color="#ccc" />
+          <Icon name="fitness-outline" size={60} color="#aaa" />
           <Text style={styles.noGymsText}>No gyms found</Text>
           <Text style={styles.noGymsSubtext}>
             {locationPermission
@@ -289,67 +314,61 @@ const LocationMain = () => {
         </View>
       );
     }
-
     return (
-      <View style={{ marginTop: 20 }}>
-        <View style={styles.listContainer}>
-          {gyms.map((gym, index) => (
-            <TouchableOpacity
-              key={gym.id}
-              style={styles.listCard}
-              onPress={() => {
-                setSelectedGym(gym);
-                setShowGymDetailsModal(true);
-              }}
-              activeOpacity={0.7}
-            >
-              <View style={styles.listCardImageContainer}>
-                <Image
-                  source={{
-                    uri:
-                      gym.image ||
-                      'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&w=2070&q=80',
-                  }}
-                  style={styles.listCardImage}
-                  resizeMode="cover"
-                />
-                {gym.type && (
-                  <View style={styles.listImageOverlay}>
-                    <View style={styles.listGymTypeBadge}>
-                      <Text style={styles.listGymTypeText}>{gym.type}</Text>
-                    </View>
+      <>
+        {gyms.map((gym) => (
+          <TouchableOpacity
+            key={gym.id}
+            style={styles.listCard}
+            onPress={() => {
+              setSelectedGym(gym);
+              setShowGymDetailsModal(true);
+            }}
+            activeOpacity={0.7}
+          >
+            <View style={styles.listCardContentLeft}>
+              <Text style={styles.listGymName}>{gym.name}</Text>
+              <View style={styles.listRatingRow}>
+                <VectorIcon name="star" size={14} color="#FFC107" />
+                <Text style={styles.listRatingText}>{gym.rating}</Text>
+                <Text style={styles.listDistanceText}>{gym.distance.toFixed(1)} km</Text>
+              </View>
+              <View style={styles.listAddressRow}>
+                <VectorIcon name="location-on" size={14} color="#aaa" />
+                <Text style={styles.listAddressText} numberOfLines={1}>
+                  {gym.address}
+                </Text>
+              </View>
+              <View style={styles.listPriceRow}>
+                <Text style={styles.listPriceText}>₹{gym.dailyPassPrice}/day</Text>
+              </View>
+            </View>
+            <View style={styles.listCardImageContainer}>
+              <Image
+                source={{ uri: gym.image }}
+                style={styles.listCardImage}
+                resizeMode="cover"
+              />
+              {gym.type && (
+                <View style={styles.listImageOverlay}>
+                  <View style={styles.listGymTypeBadge}>
+                    <Text style={styles.listGymTypeText}>{gym.type}</Text>
                   </View>
-                )}
-              </View>
-
-              <View style={styles.listCardContent}>
-                <View style={styles.listCardHeader}>
-                  <Text style={styles.listGymName} numberOfLines={1}>
-                    {gym.name}
-                  </Text>
                 </View>
-
-                <View style={styles.listLocationContainer}>
-                  <VectorIcon name="location-on" size={14} color="#666" />
-                  <Text style={styles.listLocationText} numberOfLines={1}>
-                    {gym.address && gym.address.length > 30
-                      ? gym.address.substring(0, 30) + '...'
-                      : gym.address}
-                  </Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
+              )}
+            </View>
+          </TouchableOpacity>
+        ))}
+      </>
     );
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
-      <StatusBar backgroundColor="#f5f5f5" barStyle="dark-content" />
-      <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
-        <View style={styles.mapContainer}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#001f3f' }}>
+      <StatusBar backgroundColor="#001f3f" barStyle="light-content" />
+      <View style={{ flex: 1, backgroundColor: '#001f3f' }}>
+        {/* ✅ Map: Grows from 40% → 70% as you scroll up */}
+        <Animated.View style={[styles.mapContainer, { height: mapHeight }]}>
           <MapView
             ref={mapRef}
             style={styles.map}
@@ -360,25 +379,19 @@ const LocationMain = () => {
             onMapReady={centerMapOnUser}
           >
             {userLocation && (
-              <Marker
-                coordinate={userLocation}
-                title="You are here"
-                description="Your current location"
-                anchor={{ x: 0.5, y: 0.5 }}
-              >
+              <Marker coordinate={userLocation} title="You are here" description="Your current location">
                 <View style={styles.userLocationMarker}>
                   <View style={styles.userLocationDot} />
                 </View>
               </Marker>
             )}
-
             {gyms.map((gym) => (
               <Marker
                 key={gym.id}
                 coordinate={gym.coordinates}
                 title={gym.name}
                 description={gym.address}
-                pinColor="#27ae60"
+                pinColor="#FFC107"
                 onPress={() => {
                   setSelectedGym(gym);
                   setShowGymDetailsModal(true);
@@ -387,220 +400,149 @@ const LocationMain = () => {
             ))}
           </MapView>
           {userLocation && (
-            <TouchableOpacity
-              style={styles.myLocationButton}
-              onPress={centerMapOnUser}
-              activeOpacity={0.8}
-            >
+            <TouchableOpacity style={styles.myLocationButton} onPress={centerMapOnUser}>
               <Icon name="locate" size={24} color="#fff" />
             </TouchableOpacity>
           )}
-        </View>
+        </Animated.View>
 
-        <View style={styles.contentContainer}>
-          {loading && (
-            <View style={styles.loadingOverlay}>
-              <ActivityIndicator size="large" color="#e74c3c" />
-              <Text style={styles.loadingText}>
-                {locationPermission ? 'Getting location...' : 'Requesting permission...'}
-              </Text>
-            </View>
-          )}
-
-          {error && (
-            <View style={styles.errorContainer}>
-              <Icon name="alert-circle-outline" size={24} color="#e74c3c" style={styles.errorIcon} />
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          )}
-
-          <Text style={styles.gymListTitle}>
-            {userLocation ? `Nearby Gyms (${gyms.length})` : 'Location Required'}
-          </Text>
-
-          {!userLocation && !loading && (
-            <View style={styles.noLocationContainer}>
-              <Icon name="location-outline" size={60} color="#ccc" />
-              <Text style={styles.noLocationText}>Location Access Required</Text>
-              <Text style={styles.noLocationSubtext}>
-                We need your location to show nearby gyms. Please enable location access.
-              </Text>
-              <TouchableOpacity style={styles.enableLocationButton} onPress={initializeLocation}>
-                <Text style={styles.enableLocationText}>Enable Location</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {userLocation && renderGymList()}
-        </View>
-
-        <Modal
-          visible={showGymDetailsModal}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setShowGymDetailsModal(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.gymDetailsModal}>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setShowGymDetailsModal(false)}
-              >
-                <Icon name="close" size={24} color="#666" />
-              </TouchableOpacity>
-
-              <View style={styles.modalImageContainer}>
-                <Image
-                  source={{
-                    uri:
-                      selectedGym?.image ||
-                      'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?auto=format&fit=crop&w=2070&q=80',
-                  }}
-                  style={styles.modalImage}
-                  resizeMode="cover"
-                />
-                {selectedGym?.type && (
-                  <View style={styles.modalImageOverlay}>
-                    <View style={styles.modalGymTypeBadge}>
-                      <Text style={styles.modalGymTypeText}>{selectedGym.type}</Text>
-                    </View>
-                  </View>
-                )}
-              </View>
-
-              <View style={styles.modalContent}>
-                <Text style={styles.modalGymName}>{selectedGym?.name}</Text>
-
-                <View style={styles.modalAddressContainer}>
-                  <Icon name="location-outline" size={16} color="#666" />
-                  <Text style={styles.modalAddressText}>{selectedGym?.address}</Text>
-                </View>
-
-                {/* Additional gym info, pricing, etc. can be added here if needed */}
-              </View>
-            </View>
+        {loading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#FFC107" />
+            <Text style={styles.loadingText}>
+              {locationPermission ? 'Getting location...' : 'Requesting permission...'}
+            </Text>
           </View>
-        </Modal>
+        )}
+
+        {error && (
+          <View style={styles.errorContainer}>
+            <Icon name="alert-circle-outline" size={24} color="#FFC107" style={styles.errorIcon} />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
+
+        {/* ✅ Card: Positioned at bottom, height shrinks as map grows */}
+        <Animated.View
+          style={[
+            styles.contentCard,
+            {
+              height: cardHeight,
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              zIndex: 10,
+            },
+          ]}
+        >
+          <Animated.ScrollView
+            ref={scrollViewRef}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingBottom: 40,
+              flexGrow: 1,
+            }}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+              { useNativeDriver: true }
+            )}
+            scrollEventThrottle={16}
+            bounces={true}
+            removeClippedSubviews={true}
+          >
+            <Text style={styles.gymListTitle}>
+              {userLocation ? `Nearby Gyms (${gyms.length})` : 'Location Required'}
+            </Text>
+
+            {!userLocation && !loading && (
+              <View style={styles.noLocationContainer}>
+                <Icon name="location-outline" size={60} color="#aaa" />
+                <Text style={styles.noLocationText}>Location Access Required</Text>
+                <Text style={styles.noLocationSubtext}>
+                  We need your location to show nearby gyms. Please enable location access.
+                </Text>
+                <TouchableOpacity style={styles.enableLocationButton} onPress={initializeLocation}>
+                  <Text style={styles.enableLocationText}>Enable Location</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {userLocation && renderGymList()}
+          </Animated.ScrollView>
+        </Animated.View>
       </View>
     </SafeAreaView>
   );
 };
 
+// ---------------------- STYLES (UPDATED CARD) ----------------------
 const styles = StyleSheet.create({
-  mapContainer: {
-    height: '55%',
+  contentCard: {
+    backgroundColor: '#002b5c',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: 20,
+    paddingTop: 28,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
+    overflow: 'hidden',
   },
-  map: {
-    flex: 1,
-  },
-  userLocationMarker: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  mapContainer: { position: 'relative', zIndex: 5 },
+  map: { flex: 1 },
+  userLocationMarker: { alignItems: 'center', justifyContent: 'center' },
   userLocationDot: {
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: '#27ae60',
+    backgroundColor: '#FFC107',
     borderWidth: 3,
-    borderColor: '#fff',
+    borderColor: '#001f3f',
   },
-  contentContainer: {
-    flex: 1,
-    padding: 20,
-  },
-  loadingOverlay: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#666',
-  },
-  errorContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  errorText: {
-    color: '#e74c3c',
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  errorIcon: {
-    marginBottom: 10,
-  },
+  loadingOverlay: { alignItems: 'center', marginBottom: 20 },
+  loadingText: { marginTop: 10, fontSize: 16, color: '#aaa' },
+  errorContainer: { alignItems: 'center', marginBottom: 20 },
+  errorText: { color: '#FFC107', fontSize: 16, textAlign: 'center' },
+  errorIcon: { marginBottom: 10 },
   gymListTitle: {
     fontSize: 22,
     fontWeight: '800',
-    marginBottom: 10,
-    color: '#1a237e',
+    color: '#ffffff',
     textTransform: 'uppercase',
     letterSpacing: 1,
-  },
-  listContainer: {
-    paddingHorizontal: 10,
+    marginBottom: 10,
   },
   listCard: {
-    backgroundColor: 'transparent',
+    backgroundColor: '#002b5c',
     borderRadius: 12,
-    marginBottom: 8,
+    marginBottom: 12,
     flexDirection: 'row',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+    overflow: 'hidden',
+    height: 150,
+    padding: 10,
   },
-  listCardImageContainer: {
-    width: 80,
-    height: 80,
-    position: 'relative',
-  },
-  listCardImage: {
-    width: '100%',
-    height: '100%',
-  },
-  listImageOverlay: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-  },
-  listGymTypeBadge: {
-    backgroundColor: '#e74c3c',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  listGymTypeText: {
-    fontSize: 8,
-    fontWeight: 'bold',
-    color: 'white',
-    textTransform: 'uppercase',
-  },
-  listCardContent: {
-    flex: 1,
-    padding: 12,
-    justifyContent: 'center',
-  },
-  listCardHeader: {
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  listGymName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#2c3e50',
-    marginBottom: 4,
-    fontStyle: 'italic',
-  },
-  listLocationContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  listLocationText: {
-    fontSize: 15,
-    color: '#7f8c8d',
-    marginLeft: 6,
-    flex: 1,
-    lineHeight: 20,
-    fontWeight: '500',
-  },
+  listCardContentLeft: { flex: 1, padding: 12, justifyContent: 'flex-start' },
+  listGymName: { fontSize: 16, fontWeight: '700', color: '#ffffff', marginBottom: 4 },
+  listRatingRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  listRatingText: { fontSize: 14, color: '#FFC107', marginLeft: 4, marginRight: 8 },
+  listDistanceText: { fontSize: 12, color: '#aaa' },
+  listAddressRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  listAddressText: { fontSize: 14, color: '#aaa', marginLeft: 4, flex: 1, lineHeight: 20 },
+  listPriceRow: { flexDirection: 'row', alignItems: 'center' },
+  listPriceText: { fontSize: 14, color: '#FFC107', fontWeight: '600' },
+  listCardImageContainer: { width: 200, height: '100%', position: 'relative' },
+  listCardImage: { width: '100%', height: '100%', borderRadius: 12 },
+  listImageOverlay: { position: 'absolute', top: 6, right: 6 },
+  listGymTypeBadge: { backgroundColor: '#FFC107', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 },
+  listGymTypeText: { fontSize: 8, fontWeight: 'bold', color: '#001f3f', textTransform: 'uppercase' },
   myLocationButton: {
     position: 'absolute',
     right: 20,
@@ -608,120 +550,25 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#e74c3c',
+    backgroundColor: '#FFC107',
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
   },
-  noLocationContainer: {
-    alignItems: 'center',
-    marginTop: 50,
-    padding: 20,
-  },
-  noLocationText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#666',
-    marginTop: 10,
-  },
-  noLocationSubtext: {
-    fontSize: 14,
-    color: '#999',
-    marginTop: 5,
-    textAlign: 'center',
-  },
+  noLocationContainer: { alignItems: 'center', marginTop: 50, padding: 20 },
+  noLocationText: { fontSize: 20, fontWeight: 'bold', color: '#ffffff', marginTop: 10 },
+  noLocationSubtext: { fontSize: 14, color: '#aaa', marginTop: 5, textAlign: 'center' },
   enableLocationButton: {
     marginTop: 10,
-    backgroundColor: '#e74c3c',
+    backgroundColor: '#FFC107',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,
   },
-  enableLocationText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  gymDetailsModal: {
-    backgroundColor: 'white',
-    width: '90%',
-    maxHeight: '85%',
-    borderRadius: 20,
-    overflow: 'hidden',
-    elevation: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 15,
-    right: 15,
-    zIndex: 10,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalImageContainer: {
-    height: 200,
-    position: 'relative',
-  },
-  modalImage: {
-    width: '100%',
-    height: '100%',
-  },
-  modalImageOverlay: {
-    position: 'absolute',
-    top: 15,
-    right: 15,
-  },
-  modalGymTypeBadge: {
-    backgroundColor: '#e74c3c',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  modalGymTypeText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: 'white',
-    textTransform: 'uppercase',
-  },
-  modalContent: {
-    padding: 20,
-  },
-  modalGymName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 10,
-  },
-  modalAddressContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 15,
-  },
-  modalAddressText: {
-    fontSize: 14,
-    color: '#666',
-    marginLeft: 8,
-    flex: 1,
-    lineHeight: 20,
-  },
+  enableLocationText: { color: '#001f3f', fontSize: 16, fontWeight: 'bold' },
+  noGymsContainer: { alignItems: 'center', marginTop: 50, padding: 20 },
+  noGymsText: { fontSize: 20, fontWeight: 'bold', color: '#aaa', marginTop: 10 },
+  noGymsSubtext: { fontSize: 14, color: '#aaa', marginTop: 5, textAlign: 'center' },
 });
 
 export default LocationMain;

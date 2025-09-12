@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+ import React, { useState } from 'react';
 import { SafeAreaView, TouchableOpacity, Text, ActivityIndicator, Alert } from 'react-native';
 import Auth0 from 'react-native-auth0';
 
