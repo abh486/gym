@@ -107,7 +107,7 @@ const Profile = () => {
   const updateNotificationSettings = async ({ enabled }) => {
     // Mock API update call here
   };
-  const { logout, isAuthenticated } = useAuth();
+  const {logout} = useAuth();
   const fetchProfileData = async () => {
     setLoading(true);
     setError(null);

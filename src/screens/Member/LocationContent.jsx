@@ -176,7 +176,7 @@ const LocationContent = ({
         {isLoadingLocation && (
           <View style={styles.loadingOverlay}>
             <View style={styles.loadingCard}>
-              <ActivityIndicator size="small"  />
+              <ActivityIndicator size="small" color="#e74c3c" />
               <Text style={styles.loadingText}>Getting your location...</Text>
             </View>
           </View>
