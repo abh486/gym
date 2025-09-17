@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Alert, Linking 
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/authContext';
 import apiClient from '../api/apiClient';
+import { useTheme } from 'react-native-paper';
 
 const roles = [
   { label: 'Member', description: 'Access gym facilities and classes' },
