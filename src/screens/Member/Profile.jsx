@@ -13,14 +13,16 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useAuth } from '../../context/AuthContext';
+import apiClient from '../../api/apiClient'; // Import the API client
+
 const colors = {
   background: '#001f3f',
-  primary: '#FFC107', // Golden Yellow
-  primaryText: '#001f3f', // Dark blue for contrast on yellow
-  surface: '#002b5c', // Card background
-  text: '#ffffff', // White text for dark background
-  textSecondary: 'rgba(255, 255, 255, 0.8)', // Lighter white
-  border: 'rgba(255, 193, 7, 0.3)', // Golden border
+  primary: '#FFC107',
+  primaryText: '#001f3f',
+  surface: '#002b5c',
+  text: '#ffffff',
+  textSecondary: 'rgba(255, 255, 255, 0.8)',
+  border: 'rgba(255, 193, 7, 0.3)',
   error: '#ff5252',
 };
 
@@ -33,6 +35,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigation = useNavigation();
+  const { logout } = useAuth();
 
   const [userProfile, setUserProfile] = useState(null);
   const [notifications, setNotifications] = useState([]);
@@ -44,143 +47,79 @@ const Profile = () => {
     { id: 'notifications', title: 'Notifications', icon: 'notifications' },
   ];
 
-  // Dummy fetch functions with fixed local avatar image
-  const getUserProfile = async () => {
-    return {
-      data: {
-        name: 'Abhishekh',
-        email: 'abhishekh@example.com',
-        phone: '987-654-3210',
-        membership: 'Premium',
-        memberSince: 'January 2025',
-        avatar: boyAvatar, // Assign require image here
-      },
-    };
-  };
-
-  const getUserNotifications = async () => {
-    return {
-      data: [
-        {
-          id: 1,
-          title: 'Welcome!',
-          message: 'Thanks for joining the app.',
-          read: false,
-          createdAt: '2025-09-01 10:00',
-        },
-        {
-          id: 2,
-          title: 'New Workout Plan',
-          message: 'Your custom plan is ready!',
-          read: true,
-          createdAt: '2025-09-02 08:30',
-        },
-      ],
-    };
-  };
-
-  const getCommunityPosts = async () => {
-    return {
-      data: [
-        {
-          id: 1,
-          avatar: 'https://randomuser.me/api/portraits/women/64.jpg',
-          user: 'Alice',
-          time: '2 hours ago',
-          content: 'Just finished a 5k run!',
-          likes: 10,
-          comments: 2,
-        },
-        {
-          id: 2,
-          avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-          user: 'John',
-          time: '1 day ago',
-          content: 'New PR on bench press!',
-          likes: 24,
-          comments: 5,
-        },
-      ],
-    };
-  };
-
-  const updateNotificationSettings = async ({ enabled }) => {
-    // Mock API update call here
-  };
-
-  const logout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Logout', style: 'destructive', onPress: () => navigation.navigate('Login') },
-    ]);
-  };
-
   const fetchProfileData = async () => {
     setLoading(true);
     setError(null);
 
     try {
+      // Fetch all data from the backend in parallel
       const [profileResult, notificationsResult, postsResult] = await Promise.allSettled([
-        getUserProfile(),
-        getUserNotifications(),
-        getCommunityPosts(),
+        apiClient.get('/users/auth0/profile'),
+         apiClient.get('/notifications'), // Example endpoint
+        apiClient.get('/community/posts')
+        // Assumed endpoint
       ]);
 
-      if (profileResult.status === 'fulfilled') {
-        const pr = profileResult.value;
-        setUserProfile(pr.data || pr);
+      if (profileResult.status === 'fulfilled' && profileResult.value.data.success) {
+        setUserProfile(profileResult.value.data.data);
       } else {
-        console.warn('Profile fetch failed:', profileResult.reason?.message || profileResult.reason);
-        setError('Failed to load profile. Please try again.');
+        const errorMessage = profileResult.reason?.response?.data?.message || 'Failed to load profile.';
+        setError(errorMessage);
+        console.warn('Profile fetch failed:', errorMessage);
+        setLoading(false); // Stop loading if profile fails, as it's critical
+        return;
       }
 
-      if (notificationsResult.status === 'fulfilled') {
-        const nr = notificationsResult.value;
-        setNotifications(nr.data || nr);
+      if (notificationsResult.status === 'fulfilled' && notificationsResult.value.data.success) {
+        setNotifications(notificationsResult.value.data.data);
       } else {
-        console.warn('Notifications fetch failed:', notificationsResult.reason?.message || notificationsResult.reason);
+        console.warn('Notifications fetch failed:', notificationsResult.reason?.response?.data?.message);
       }
 
-      if (postsResult.status === 'fulfilled') {
-        const cr = postsResult.value;
-        setCommunityPosts(cr.data || cr);
+      if (postsResult.status === 'fulfilled' && postsResult.value.data.success) {
+        setCommunityPosts(postsResult.value.data.data);
       } else {
-        console.warn('Community posts fetch failed:', postsResult.reason?.message || postsResult.reason);
+        console.warn('Community posts fetch failed:', postsResult.reason?.response?.data?.message);
       }
     } catch (err) {
-      setError('Failed to load profile. Please try again.');
-      console.error(err);
+      setError('An unexpected error occurred. Please try again.');
+      console.error('Fetch data error:', err);
     } finally {
       setLoading(false);
     }
   };
+  
+  // Mock function for updating settings, can be replaced with a real API call
+  const updateNotificationSettings = async ({ enabled }) => {
+    try {
+      // Example: await apiClient.put('/users/auth0/settings', { notifications: enabled });
+      console.log(`Notification settings updated to: ${enabled}`);
+    } catch (error) {
+      throw new Error('Failed to update settings on the server.');
+    }
+  };
 
   const handleNotificationToggle = async (value) => {
+    setNotificationsEnabled(value); // Optimistic UI update
     try {
-      setNotificationsEnabled(value);
       await updateNotificationSettings({ enabled: value });
     } catch (error) {
       console.error('Update notification settings error:', error);
       Alert.alert('Error', 'Failed to update notification settings');
-      setNotificationsEnabled(!value);
+      setNotificationsEnabled(!value); // Revert on failure
     }
   };
 
   useEffect(() => {
-    fetchProfileData();
-  }, []);
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchProfileData();
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   if (loading) {
     return (
-      <View
-        style={[
-          styles.container,
-          {
-            backgroundColor: colors.background,
-            justifyContent: 'center',
-            alignItems: 'center',
-          },
-        ]}>
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={colors.primary} />
         <Text style={{ marginTop: 15, fontSize: 16, color: colors.textSecondary }}>Loading Profile...</Text>
       </View>
@@ -189,25 +128,8 @@ const Profile = () => {
 
   if (error) {
     return (
-      <View
-        style={[
-          styles.container,
-          {
-            backgroundColor: colors.background,
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: 20,
-          },
-        ]}>
-        <Text
-          style={{
-            color: colors.error,
-            marginBottom: 20,
-            fontSize: 16,
-            textAlign: 'center',
-          }}>
-          {error}
-        </Text>
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', padding: 20 }]}>
+        <Text style={{ color: colors.error, marginBottom: 20, fontSize: 16, textAlign: 'center' }}>{error}</Text>
         <TouchableOpacity onPress={fetchProfileData} style={styles.retryButton}>
           <Text style={styles.retryButtonText}>Try Again</Text>
         </TouchableOpacity>
@@ -221,14 +143,17 @@ const Profile = () => {
     phone: '',
     membership: 'Basic',
     memberSince: 'Recently',
-    avatar: boyAvatar, // fallback local image
+    avatar: null, // Default to null, so the fallback can be used
   };
 
   const renderProfileTab = () => (
     <View style={styles.tabContent}>
       <View style={[styles.profileHeader, { backgroundColor: colors.surface }]}>
-        {/* Image source directly supports local require */}
-        <Image source={safeUserProfile.avatar} style={styles.profileAvatar} />
+        {/* --- FIXED --- Correctly handles remote URI or local fallback */}
+        <Image 
+          source={safeUserProfile.avatar ? { uri: safeUserProfile.avatar } : boyAvatar} 
+          style={styles.profileAvatar} 
+        />
         <View style={styles.profileInfo}>
           <Text style={[styles.profileName, { color: colors.text }]}>{safeUserProfile.name}</Text>
           <Text style={[styles.profileMembership, { color: colors.primary }]}>
@@ -277,10 +202,6 @@ const Profile = () => {
           <Icon name="help" size={24} color={colors.primary} style={styles.actionIcon} />
           <Text style={[styles.actionText, { color: colors.text }]}>Help & Support</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionButton, { borderBottomColor: colors.border }]}>
-          <Icon name="info" size={24} color={colors.primary} style={styles.actionIcon} />
-          <Text style={[styles.actionText, { color: colors.text }]}>About App</Text>
-        </TouchableOpacity>
         <TouchableOpacity
           style={[styles.actionButton, styles.logoutButton]}
           onPress={logout}>
@@ -306,9 +227,8 @@ const Profile = () => {
             <View key={post.id} style={[styles.postCard, { backgroundColor: colors.surface }]}>
               <View style={styles.postHeader}>
                 <Image 
-                  source={{ uri: post.avatar }} 
-                  style={styles.postAvatar} 
-                  defaultSource={boyAvatar} // Fallback image
+                  source={post.avatar ? { uri: post.avatar } : boyAvatar} 
+                  style={styles.postAvatar}
                 />
                 <View style={styles.postUserInfo}>
                   <Text style={[styles.postUserName, { color: colors.text }]}>{post.user}</Text>
@@ -320,16 +240,15 @@ const Profile = () => {
 
               <View style={styles.postActions}>
                 <TouchableOpacity style={styles.postAction}>
-                  <Icon name="favorite" size={18} color="#FF6B35" style={styles.postActionIcon} />
+                  <Icon name="favorite-border" size={18} color={colors.textSecondary} style={styles.postActionIcon} />
                   <Text style={[styles.postActionText, { color: colors.text }]}>{post.likes}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.postAction}>
-                  <Icon name="chat-bubble" size={18} color={colors.primary} style={styles.postActionIcon} />
+                  <Icon name="chat-bubble-outline" size={18} color={colors.textSecondary} style={styles.postActionIcon} />
                   <Text style={[styles.postActionText, { color: colors.text }]}>{post.comments}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.postAction}>
                   <Icon name="share" size={18} color={colors.textSecondary} style={styles.postActionIcon} />
-                  <Text style={[styles.postActionText, { color: colors.text }]}>{'Share'}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -337,7 +256,7 @@ const Profile = () => {
         ) : (
           <View style={[styles.emptyState, { backgroundColor: colors.surface }]}>
             <Text style={[styles.emptyText, { color: colors.text }]}>No community posts yet</Text>
-            <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Be the first to share your fitness journey!</Text>
+            <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Be the first to share your journey!</Text>
           </View>
         )}
       </View>
@@ -356,7 +275,7 @@ const Profile = () => {
             value={notificationsEnabled}
             onValueChange={handleNotificationToggle}
             trackColor={{ false: '#767577', true: colors.primary }}
-            thumbColor={notificationsEnabled ? '#fff' : '#f4f3f4'}
+            thumbColor={'#fff'}
           />
         </View>
       </View>
@@ -372,9 +291,6 @@ const Profile = () => {
                 !notification.read && styles.unreadNotification
               ]}
             >
-              <View style={styles.notificationIcon}>
-                <Text style={[styles.notificationIconText, { color: colors.primary }]}>{notification.icon || '🔔'}</Text>
-              </View>
               <View style={styles.notificationContent}>
                 <Text style={[styles.notificationTitle, { color: colors.text }]}>{notification.title}</Text>
                 <Text style={[styles.notificationMessage, { color: colors.textSecondary }]}>{notification.message}</Text>
@@ -395,7 +311,7 @@ const Profile = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.tabContainer, { backgroundColor: colors.background }]}>
+      <View style={[styles.tabContainer, { backgroundColor: colors.surface }]}>
         {tabs.map((tab) => (
           <TouchableOpacity
             key={tab.id}
@@ -408,20 +324,11 @@ const Profile = () => {
               color={activeTab === tab.id ? colors.primary : colors.textSecondary}
               style={styles.tabIcon}
             />
-            <Text
-              style={[
-                styles.tabText,
-                { color: activeTab === tab.id ? colors.primary : colors.textSecondary },
-                activeTab === tab.id && styles.activeTabText,
-              ]}
-            >
-              {tab.title}
-            </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <ScrollView style={[styles.content, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {activeTab === 'profile' && renderProfileTab()}
         {activeTab === 'community' && renderCommunityTab()}
         {activeTab === 'notifications' && renderNotificationsTab()}
@@ -430,45 +337,36 @@ const Profile = () => {
   );
 };
 
-export default Profile;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
   tabContainer: {
     flexDirection: 'row',
     paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 193, 7, 0.2)',
+    paddingTop: 10,
   },
   tab: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: 12,
-    borderRadius: 12,
-    marginHorizontal: 4,
+    borderBottomWidth: 3,
+    borderBottomColor: 'transparent',
   },
   activeTab: {
-    backgroundColor: 'rgba(255, 193, 7, 0.2)',
+    borderBottomColor: colors.primary,
   },
   tabIcon: {
     marginBottom: 6,
   },
-  tabText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  activeTabText: {
-    color: '#FFC107',
-  },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 15,
   },
   tabContent: {
     paddingTop: 20,
+    paddingBottom: 40,
   },
   profileHeader: {
     flexDirection: 'row',
@@ -477,7 +375,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 193, 7, 0.3)',
+    borderColor: colors.border,
   },
   profileAvatar: {
     width: 80,
@@ -485,13 +383,13 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     marginRight: 15,
     borderWidth: 2,
-    borderColor: '#FFC107',
+    borderColor: colors.primary,
   },
   profileInfo: {
     flex: 1,
   },
   profileName: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 5,
   },
@@ -506,82 +404,82 @@ const styles = StyleSheet.create({
   editButton: {
     paddingHorizontal: 15,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 20,
     marginLeft: 10,
   },
   editButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   detailsCard: {
     borderRadius: 16,
     padding: 20,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 193, 7, 0.3)',
+    borderColor: colors.border,
   },
   detailsTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 15,
+    color: colors.text,
   },
   detailItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 193, 7, 0.2)',
+    borderBottomColor: colors.border,
   },
   detailLabel: {
-    fontSize: 14,
+    fontSize: 16,
+    color: colors.textSecondary,
   },
   detailValue: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '500',
+    color: colors.text,
   },
   actionsCard: {
     borderRadius: 16,
-    padding: 20,
+    paddingHorizontal: 5,
+    paddingVertical: 10,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 193, 7, 0.3)',
+    borderColor: colors.border,
   },
   actionsTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 15,
+    marginBottom: 10,
+    color: colors.text,
+    paddingHorizontal: 15,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    borderBottomWidth: 1,
+    paddingVertical: 15,
+    paddingHorizontal: 15,
   },
   actionIcon: {
-    marginRight: 15,
+    marginRight: 20,
   },
   actionText: {
     fontSize: 16,
     fontWeight: '500',
   },
-  logoutButton: {
-    borderBottomWidth: 0,
-    marginTop: 10,
-  },
+  logoutButton: {},
   createPostCard: {
     borderRadius: 16,
-    padding: 20,
+    padding: 15,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 193, 7, 0.3)',
+    borderColor: colors.border,
   },
   createPostButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 15,
-    backgroundColor: 'rgba(255, 193, 7, 0.1)',
-    borderRadius: 12,
+    paddingVertical: 10,
   },
   createPostIcon: {
     marginRight: 10,
@@ -596,7 +494,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 15,
     borderWidth: 1,
-    borderColor: 'rgba(255, 193, 7, 0.2)',
+    borderColor: colors.border,
   },
   postHeader: {
     flexDirection: 'row',
@@ -604,39 +502,33 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   postAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
     marginRight: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 193, 7, 0.5)',
+    borderColor: colors.primary,
   },
   postUserInfo: {
     flex: 1,
   },
   postUserName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   postTime: {
     fontSize: 12,
   },
   postContent: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 10,
-  },
-  postImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 10,
-    marginBottom: 10,
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 15,
   },
   postActions: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 193, 7, 0.2)',
+    borderTopColor: colors.border,
     paddingTop: 10,
   },
   postAction: {
@@ -644,7 +536,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   postActionIcon: {
-    marginRight: 5,
+    marginRight: 6,
   },
   postActionText: {
     fontSize: 14,
@@ -654,7 +546,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 193, 7, 0.3)',
+    borderColor: colors.border,
   },
   settingItem: {
     flexDirection: 'row',
@@ -680,58 +572,44 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 15,
     borderWidth: 1,
-    borderColor: 'rgba(255, 193, 7, 0.2)',
+    borderColor: colors.border,
+    alignItems: 'center',
   },
   unreadNotification: {
     backgroundColor: 'rgba(255, 193, 7, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 193, 7, 0.4)',
-  },
-  notificationIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 193, 7, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-  },
-  notificationIconText: {
-    fontSize: 18,
-    fontWeight: 'bold',
   },
   notificationContent: {
     flex: 1,
   },
   notificationTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
     marginBottom: 4,
   },
   notificationMessage: {
     fontSize: 14,
-    marginBottom: 4,
+    marginBottom: 6,
   },
   notificationTime: {
     fontSize: 12,
   },
   unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#FFC107',
-    alignSelf: 'center',
-    marginLeft: 8,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.primary,
+    marginLeft: 10,
   },
   emptyState: {
     borderRadius: 16,
     padding: 30,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 193, 7, 0.2)',
+    borderColor: colors.border,
+    marginTop: 20,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     marginBottom: 8,
   },
@@ -742,14 +620,16 @@ const styles = StyleSheet.create({
   retryButton: {
     backgroundColor: colors.primary,
     paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 12,
+    paddingHorizontal: 30,
+    borderRadius: 25,
     alignItems: 'center',
     marginTop: 20,
   },
   retryButtonText: {
     color: colors.primaryText,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
 });
+
+export default Profile;

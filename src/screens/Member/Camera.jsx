@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { LinearGradient } from 'react-native-linear-gradient';
 import { RNCamera } from 'react-native-camera';
+import { useTheme } from 'react-native-paper';
 
 const Camera = () => {
   const { colors } = useTheme();

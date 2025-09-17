@@ -161,14 +161,14 @@ const LocationContent = ({
             </View>
           )}
 
-          {isLoadingLocation && (
-            <View style={styles.loadingOverlay}>
-              <View style={styles.loadingCard}>
-                <ActivityIndicator size="small" color="#FFC107" />
-                <Text style={styles.loadingText}>Getting your location...</Text>
-              </View>
+        {isLoadingLocation && (
+          <View style={styles.loadingOverlay}>
+            <View style={styles.loadingCard}>
+              <ActivityIndicator size="small" color="#e74c3c" />
+              <Text style={styles.loadingText}>Getting your location...</Text>
             </View>
-          )}
+          </View>
+        )}
 
           <MapView
             style={styles.map}

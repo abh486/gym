@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useTheme } from 'react-native-paper';
 
 const { width, height } = Dimensions.get('window');
 
