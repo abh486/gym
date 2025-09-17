@@ -107,9 +107,6 @@ const Profile = () => {
   const updateNotificationSettings = async ({ enabled }) => {
     // Mock API update call here
   };
-<<<<<<< HEAD
-  const { logout, isAuthenticated } = useAuth();
-=======
 
   const logout = () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
@@ -118,7 +115,6 @@ const Profile = () => {
     ]);
   };
 
->>>>>>> e788a0880468d19c620034dd11ba2f6a46a30aef
   const fetchProfileData = async () => {
     setLoading(true);
     setError(null);

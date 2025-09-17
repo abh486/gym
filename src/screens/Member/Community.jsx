@@ -5,6 +5,8 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useAuth0 } from 'react-native-auth0';
+import apiClient from '../../api/apiClient';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -14,132 +16,96 @@ const Community = () => {
   const [chatMessage, setChatMessage] = useState('');
   const [chatMessages, setChatMessages] = useState({});
 
-  // ✅ Updated Icons — using Ionicons
+  const { getCredentials } = useAuth0();
+
   const tabs = [
     { id: 'groups', title: 'Fitness Groups', icon: 'people-outline' },
     { id: 'trainers', title: 'Find Trainers', icon: 'fitness-outline' },
   ];
 
   const fitnessGroups = [
-    {
-      id: 1,
-      name: "Morning Runners Club",
-      members: 128,
-      activity: "Running",
-      meetingTime: "6:00 AM Daily",
-      location: "Central Park",
-      description: "Join our morning running group for daily cardio workouts and social fitness fun!"
-    },
-    {
-      id: 2,
-      name: "Weightlifting Warriors",
-      members: 89,
-      activity: "Strength Training",
-      meetingTime: "7:00 PM Mon/Wed/Fri",
-      location: "Downtown Fitness",
-      description: "Serious lifters supporting each other in strength training goals."
-    },
-    {
-      id: 3,
-      name: "Yoga Flow Community",
-      members: 156,
-      activity: "Yoga",
-      meetingTime: "6:30 PM Tue/Thu",
-      location: "Zen Studio",
-      description: "Mindful yoga sessions for all levels in a supportive environment."
-    }
+    { id: 1, name: "Morning Runners Club", members: 128, activity: "Running", meetingTime: "6:00 AM Daily", location: "Central Park", description: "Join our morning running group for daily cardio workouts and social fitness fun!" },
+    { id: 2, name: "Weightlifting Warriors", members: 89, activity: "Strength Training", meetingTime: "7:00 PM Mon/Wed/Fri", location: "Downtown Fitness", description: "Serious lifters supporting each other in strength training goals." },
+    { id: 3, name: "Yoga Flow Community", members: 156, activity: "Yoga", meetingTime: "6:30 PM Tue/Thu", location: "Zen Studio", description: "Mindful yoga sessions for all levels in a supportive environment." }
   ];
 
   const trainers = [
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      specialty: "Weight Loss & Cardio",
-      experience: "5 years",
-      rating: 4.9,
-      price: "$50/session",
-      location: "Downtown Gym",
-      description: "Certified personal trainer specializing in weight loss and cardiovascular fitness.",
-      isOnline: true
-    },
-    {
-      id: 2,
-      name: "Mike Chen",
-      specialty: "Strength Training",
-      experience: "8 years",
-      rating: 4.8,
-      price: "$60/session",
-      location: "Iron Paradise Gym",
-      description: "Former powerlifter turned trainer. Expert in building strength and muscle mass.",
-      isOnline: false
-    },
-    {
-      id: 3,
-      name: "Emma Rodriguez",
-      specialty: "Yoga & Flexibility",
-      experience: "6 years",
-      rating: 4.9,
-      price: "$45/session",
-      location: "Zen Wellness Center",
-      description: "Certified yoga instructor and flexibility coach for all levels.",
-      isOnline: true
-    },
-    {
-      id: 4,
-      name: "David Kim",
-      specialty: "HIIT & CrossFit",
-      experience: "4 years",
-      rating: 4.7,
-      price: "$55/session",
-      location: "CrossFit Box",
-      description: "High-intensity interval training specialist and CrossFit Level 2 trainer.",
-      isOnline: true
-    }
+    { id: 1, name: "Sarah Johnson", specialty: "Weight Loss & Cardio", experience: "5 years", rating: 4.9, price: "$50/session", location: "Downtown Gym", description: "Certified personal trainer specializing in weight loss and cardiovascular fitness.", isOnline: true },
+    { id: 2, name: "Mike Chen", specialty: "Strength Training", experience: "8 years", rating: 4.8, price: "$60/session", location: "Iron Paradise Gym", description: "Former powerlifter turned trainer. Expert in building strength and muscle mass.", isOnline: false },
+    { id: 3, name: "Emma Rodriguez", specialty: "Yoga & Flexibility", experience: "6 years", rating: 4.9, price: "$45/session", location: "Zen Wellness Center", description: "Certified yoga instructor and flexibility coach for all levels.", isOnline: true },
+    { id: 4, name: "David Kim", specialty: "HIIT & CrossFit", experience: "4 years", rating: 4.7, price: "$55/session", location: "CrossFit Box", description: "High-intensity interval training specialist and CrossFit Level 2 trainer.", isOnline: true }
   ];
 
-  const sendMessage = () => {
-    if (chatMessage.trim() && selectedTrainer) {
-      const newMessage = {
-        id: Date.now(),
-        text: chatMessage,
-        sender: 'user',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
+  // ----------------- Backend Helpers -----------------
+  const startConversation = async (trainerId) => {
+    try {
+      const creds = await getCredentials();
+      const token = creds.accessToken;
 
-      setChatMessages(prev => ({
-        ...prev,
-        [selectedTrainer.id]: [
-          ...(prev[selectedTrainer.id] || []),
-          newMessage
-        ]
-      }));
-
-      setChatMessage('');
-
-      // Simulate trainer response
-      setTimeout(() => {
-        const trainerResponse = {
-          id: Date.now() + 1,
-          text: "Thanks for your message! I'll get back to you with a detailed response shortly.",
-          sender: 'trainer',
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-
-        setChatMessages(prev => ({
-          ...prev,
-          [selectedTrainer.id]: [
-            ...(prev[selectedTrainer.id] || []),
-            trainerResponse
-          ]
-        }));
-      }, 1000);
+      const res = await apiClient.post(
+        '/chat/conversations',
+        { recipientId: trainerId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return res.data.data; // conversation object
+    } catch (err) {
+      console.error('Start conversation error:', err.response?.data || err.message);
+      return null;
     }
   };
 
+  const fetchMessages = async (conversationId) => {
+    try {
+      const creds = await getCredentials();
+      const token = creds.accessToken;
+
+      const res = await apiClient.get(
+        `/chat/conversations/${conversationId}/messages`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      return res.data.data || [];
+    } catch (err) {
+      console.error('Fetch messages error:', err.response?.data || err.message);
+      return [];
+    }
+  };
+
+  const sendMessageToBackend = async (conversationId, content) => {
+    try {
+      const creds = await getCredentials();
+      const token = creds.accessToken;
+
+      const res = await apiClient.post(
+        `/chat/conversations/${conversationId}/messages`,
+        { content },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      return res.data.data;
+    } catch (err) {
+      console.error('Send message error:', err.response?.data || err.message);
+      return null;
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!chatMessage.trim() || !selectedTrainer) return;
+
+    const newMsg = await sendMessageToBackend(selectedTrainer.conversationId, chatMessage);
+    if (newMsg) {
+      setChatMessages(prev => ({
+        ...prev,
+        [selectedTrainer.id]: [...(prev[selectedTrainer.id] || []), newMsg]
+      }));
+    }
+    setChatMessage('');
+  };
+
+  // ----------------- Renderers -----------------
   const renderGroupsTab = () => (
     <View style={styles.tabContent}>
       <View style={styles.groupsList}>
-        {fitnessGroups.map((group) => (
+        {fitnessGroups.map(group => (
           <TouchableOpacity key={group.id} style={styles.groupCard}>
             <View style={styles.groupHeader}>
               <Text style={styles.groupName}>{group.name}</Text>
@@ -167,18 +133,23 @@ const Community = () => {
   );
 
   const renderTrainersTab = () => {
-    if (selectedTrainer) {
-      return renderTrainerChat();
-    }
+    if (selectedTrainer) return renderTrainerChat();
 
     return (
       <View style={styles.tabContent}>
         <View style={styles.trainersList}>
-          {trainers.map((trainer) => (
-            <TouchableOpacity 
-              key={trainer.id} 
+          {trainers.map(trainer => (
+            <TouchableOpacity
+              key={trainer.id}
               style={styles.trainerCard}
-              onPress={() => setSelectedTrainer(trainer)}
+              onPress={async () => {
+                const conversation = await startConversation(trainer.id);
+                if (conversation) {
+                  const msgs = await fetchMessages(conversation._id);
+                  setChatMessages(prev => ({ ...prev, [trainer.id]: msgs }));
+                  setSelectedTrainer({ ...trainer, conversationId: conversation._id });
+                }
+              }}
             >
               <View style={styles.trainerHeader}>
                 <View style={styles.trainerInfo}>
@@ -193,9 +164,7 @@ const Community = () => {
                   <Text style={styles.rating}>{trainer.rating}</Text>
                 </View>
               </View>
-              
               <Text style={styles.specialty}>{trainer.specialty}</Text>
-              
               <View style={styles.trainerDetails}>
                 <View style={styles.detailItem}>
                   <Icon name="time-outline" size={16} color="#FFC107" />
@@ -210,9 +179,7 @@ const Community = () => {
                   <Text style={styles.detailText}>{trainer.location}</Text>
                 </View>
               </View>
-              
               <Text style={styles.trainerDescription}>{trainer.description}</Text>
-              
               <TouchableOpacity style={styles.chatButton}>
                 <Icon name="chatbubble-outline" size={18} color="white" />
                 <Text style={styles.chatButtonText}>Start Chat</Text>
@@ -229,12 +196,8 @@ const Community = () => {
 
     return (
       <View style={styles.chatContainer}>
-        {/* Chat Header */}
         <View style={styles.chatHeader}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => setSelectedTrainer(null)}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={() => setSelectedTrainer(null)}>
             <Icon name="arrow-back" size={24} color="#FFC107" />
           </TouchableOpacity>
           <View style={styles.chatHeaderInfo}>
@@ -246,29 +209,23 @@ const Community = () => {
           </View>
         </View>
 
-        {/* Messages */}
         <FlatList
           data={messages}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item, index) => item._id?.toString() || index.toString()}
           style={styles.messagesList}
           renderItem={({ item }) => (
-            <View style={[
-              styles.messageContainer,
-              item.sender === 'user' ? styles.userMessage : styles.trainerMessage
-            ]}>
-              <Text style={[
-                styles.messageText,
-                item.sender === 'user' ? styles.userMessageText : styles.trainerMessageText
-              ]}>
-                {item.text}
+            <View style={[styles.messageContainer, item.senderId === 'user' ? styles.userMessage : styles.trainerMessage]}>
+              <Text style={[styles.messageText, item.senderId === 'user' ? styles.userMessageText : styles.trainerMessageText]}>
+                {item.content || item.text}
               </Text>
-              <Text style={styles.messageTime}>{item.timestamp}</Text>
+              <Text style={styles.messageTime}>
+                {new Date(item.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </Text>
             </View>
           )}
           showsVerticalScrollIndicator={false}
         />
 
-        {/* Message Input */}
         <View style={styles.messageInputContainer}>
           <TextInput
             style={styles.messageInput}
@@ -279,11 +236,7 @@ const Community = () => {
             maxLength={500}
             placeholderTextColor="#aaa"
           />
-          <TouchableOpacity 
-            style={styles.sendButton}
-            onPress={sendMessage}
-            disabled={!chatMessage.trim()}
-          >
+          <TouchableOpacity style={styles.sendButton} onPress={sendMessage} disabled={!chatMessage.trim()}>
             <Icon name="send" size={20} color="white" />
           </TouchableOpacity>
         </View>
@@ -294,36 +247,24 @@ const Community = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#001f3f" />
-
-      {/* Header */}
-      <LinearGradient
-        colors={['#001f3f', '#002b5c']}
-        style={styles.header}
-      >
+      <LinearGradient colors={['#001f3f', '#002b5c']} style={styles.header}>
         <Text style={styles.headerTitle}>Community</Text>
         <Text style={styles.headerSubtitle}>Connect with fitness enthusiasts</Text>
       </LinearGradient>
 
-      {/* Tab Navigation */}
       <View style={styles.tabContainer}>
-        {tabs.map((tab) => (
+        {tabs.map(tab => (
           <TouchableOpacity
             key={tab.id}
             style={[styles.tab, activeTab === tab.id && styles.activeTab]}
-            onPress={() => {
-              setActiveTab(tab.id);
-              setSelectedTrainer(null); // Reset trainer selection when switching tabs
-            }}
+            onPress={() => { setActiveTab(tab.id); setSelectedTrainer(null); }}
           >
             <Icon name={tab.icon} size={22} color={activeTab === tab.id ? '#FFC107' : 'rgba(255, 255, 255, 0.6)'} />
-            <Text style={[styles.tabText, activeTab === tab.id && styles.activeTabText]}>
-              {tab.title}
-            </Text>
+            <Text style={[styles.tabText, activeTab === tab.id && styles.activeTabText]}>{tab.title}</Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {/* Tab Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {activeTab === 'groups' && renderGroupsTab()}
         {activeTab === 'trainers' && renderTrainersTab()}
@@ -332,7 +273,12 @@ const Community = () => {
   );
 };
 
+
+
+
+
 const styles = StyleSheet.create({
+  // (same styles you provided, unchanged)
   container: {
     flex: 1,
     backgroundColor: '#001f3f',
@@ -453,7 +399,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  // Trainer styles
   trainersList: {
     gap: 15,
   },
@@ -538,7 +483,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 8,
   },
-  // Chat styles
   chatContainer: {
     flex: 1,
     backgroundColor: '#001f3f',

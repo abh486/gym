@@ -14,8 +14,6 @@ import StartWorkout from '../screens/Member/StartWorkout';
 import WorkoutStats from '../screens/Member/WorkoutStats';
 import DietStats from '../screens/Member/DietStats';
 
-// import Training from '../screens/Member/Training'; // 👈 uncomment if exists
-
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
@@ -28,25 +26,6 @@ const AppNavigator = () => {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator
-        screenOptions={{ headerShown: false }}
-        initialRouteName="MemberProfile"
-      >
-        <Stack.Screen 
-          name="MainTabs" 
-          component={BottomTabNavigator}
-          options={{ title: 'Main App' }}
-        />
-        {/* Other stack screens */}
-        <Stack.Screen name="DietLog" component={DietLog} />
-        {/* <Stack.Screen name="Training" component={Training} /> */} 
-        <Stack.Screen name="MemberProfile" component={MemberProfile} />
-        <Stack.Screen name="LoginScreen" component={LoginScreen} />
-        <Stack.Screen name="WorkoutLog" component={WorkoutLog} />
-        <Stack.Screen name="WorkoutPlanDetail" component={WorkoutPlanDetail} />
-        <Stack.Screen name="StartWorkout" component={StartWorkout} />
-         <Stack.Screen name="WorkoutStats" component={WorkoutStats} />
-         <Stack.Screen name="DietStats" component={DietStats} />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {isAuthenticated ? (
           <>
@@ -55,6 +34,9 @@ const AppNavigator = () => {
             <Stack.Screen name="MemberProfile" component={MemberProfile} />
             <Stack.Screen name="WorkoutLog" component={WorkoutLog} />
             <Stack.Screen name="WorkoutPlanDetail" component={WorkoutPlanDetail} />
+            <Stack.Screen name="StartWorkout" component={StartWorkout} />
+            <Stack.Screen name="WorkoutStats" component={WorkoutStats} />
+            <Stack.Screen name="DietStats" component={DietStats} />
           </>
         ) : (
           <Stack.Screen name="LoginScreen" component={LoginScreen} />
