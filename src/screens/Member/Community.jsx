@@ -1,53 +1,156 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Dimensions, StatusBar, SafeAreaView, TextInput, FlatList
+  Dimensions, StatusBar, SafeAreaView, TextInput, FlatList, ActivityIndicator, Image, Modal
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useAuth0 } from 'react-native-auth0';
 import apiClient from '../../api/apiClient';
+import * as trainerService from '../../api/trainerService';
 
 const { width: screenWidth } = Dimensions.get('window');
 
+// Dummy data for posts
+const initialPosts = [
+  {
+    id: '1',
+    userName: 'Alex Fitness',
+    userAvatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+    imageUrl: 'https://images.unsplash.com/photo-1549060279-7e168f328221?q=80&w=2070&auto=format&fit=crop',
+    caption: 'Great morning run today! Feeling energized. #running #fitness',
+    likes: 124,
+    comments: [
+      { id: 'c1', userName: 'JaneDoe', text: 'Awesome!' },
+      { id: 'c2', userName: 'JohnSmith', text: 'Keep it up!' }
+    ],
+    liked: false,
+  },
+  {
+    id: '2',
+    userName: 'Sara Workout',
+    userAvatar: 'https://randomuser.me/api/portraits/women/44.jpg',
+    imageUrl: 'https://images.unsplash.com/photo-1599058917212-d750089bc07e?q=80&w=2069&auto=format&fit=crop',
+    caption: 'Hit a new personal best on my deadlift! 💪 #gym #strength',
+    likes: 250,
+    comments: [],
+    liked: true,
+  },
+];
+
 const Community = () => {
-  const [activeTab, setActiveTab] = useState('groups');
+  const [activeTab, setActiveTab] = useState('posts');
   const [selectedTrainer, setSelectedTrainer] = useState(null);
   const [chatMessage, setChatMessage] = useState('');
   const [chatMessages, setChatMessages] = useState({});
-
+  const [trainers, setTrainers] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   const { getCredentials } = useAuth0();
 
+  // State for posts
+  const [posts, setPosts] = useState(initialPosts);
+  const [commentText, setCommentText] = useState('');
+
+  // State for Add Post Modal
+  const [isPostModalVisible, setPostModalVisible] = useState(false);
+  const [newPostCaption, setNewPostCaption] = useState('');
+  const [newPostImage, setNewPostImage] = useState(null);
+
+
+  const handleLike = (postId) => {
+    setPosts(posts.map(post => {
+      if (post.id === postId) {
+        return { ...post, liked: !post.liked, likes: post.liked ? post.likes - 1 : post.likes + 1 };
+      }
+      return post;
+    }));
+  };
+
+  const handleComment = (postId, currentCommentText) => {
+    if (currentCommentText.trim() === '') return;
+    setPosts(posts.map(post => {
+      if (post.id === postId) {
+        const newComment = {
+          id: `c${Date.now()}`,
+          userName: 'You', // Replace with actual user name from auth
+          text: currentCommentText,
+        };
+        return { ...post, comments: [...post.comments, newComment] };
+      }
+      return post;
+    }));
+  };
+
+  const handleSelectImage = () => {
+    // In a real app, you would use a library like react-native-image-picker
+    // For this example, we'll just use a placeholder image.
+    setNewPostImage('https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=2070&auto=format&fit=crop');
+  };
+
+  const handleAddPost = () => {
+    if (!newPostImage || !newPostCaption.trim()) {
+      alert('Please select an image and write a caption.');
+      return;
+    }
+    const newPost = {
+      id: `post_${Date.now()}`,
+      userName: 'Current User', // Replace with actual user name
+      userAvatar: 'https://randomuser.me/api/portraits/men/1.jpg', // Replace with actual user avatar
+      imageUrl: newPostImage,
+      caption: newPostCaption,
+      likes: 0,
+      comments: [],
+      liked: false,
+    };
+    setPosts([newPost, ...posts]);
+    setPostModalVisible(false);
+    setNewPostImage(null);
+    setNewPostCaption('');
+  };
+
+
+  const fetchTrainers = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await trainerService.browseTrainers({ page: 1, limit: 10 });
+      const formattedTrainers = result.trainers.map(profile => ({
+        id: profile.user.id,
+        name: profile.user.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ').replace(/(^\w{1})|(\s+\w{1})/g, letter => letter.toUpperCase()),
+        specialty: 'Fitness Expert',
+        experience: `${profile.experience || 0} years`,
+        rating: 4.8,
+        price: '$50/session',
+        location: 'Online',
+        description: profile.bio || 'No biography available.',
+        isOnline: true,
+      }));
+      setTrainers(formattedTrainers);
+    } catch (err) {
+      setError('Failed to load trainers. Please try again later.');
+      console.error("Fetch Trainers Error:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'trainers') {
+      fetchTrainers();
+    }
+  }, [activeTab, fetchTrainers]);
+
   const tabs = [
-    { id: 'groups', title: 'Fitness Groups', icon: 'people-outline' },
+    { id: 'posts', title: 'Community Posts', icon: 'images-outline' },
     { id: 'trainers', title: 'Find Trainers', icon: 'fitness-outline' },
   ];
 
-  const fitnessGroups = [
-    { id: 1, name: "Morning Runners Club", members: 128, activity: "Running", meetingTime: "6:00 AM Daily", location: "Central Park", description: "Join our morning running group for daily cardio workouts and social fitness fun!" },
-    { id: 2, name: "Weightlifting Warriors", members: 89, activity: "Strength Training", meetingTime: "7:00 PM Mon/Wed/Fri", location: "Downtown Fitness", description: "Serious lifters supporting each other in strength training goals." },
-    { id: 3, name: "Yoga Flow Community", members: 156, activity: "Yoga", meetingTime: "6:30 PM Tue/Thu", location: "Zen Studio", description: "Mindful yoga sessions for all levels in a supportive environment." }
-  ];
-
-  const trainers = [
-    { id: 1, name: "Sarah Johnson", specialty: "Weight Loss & Cardio", experience: "5 years", rating: 4.9, price: "$50/session", location: "Downtown Gym", description: "Certified personal trainer specializing in weight loss and cardiovascular fitness.", isOnline: true },
-    { id: 2, name: "Mike Chen", specialty: "Strength Training", experience: "8 years", rating: 4.8, price: "$60/session", location: "Iron Paradise Gym", description: "Former powerlifter turned trainer. Expert in building strength and muscle mass.", isOnline: false },
-    { id: 3, name: "Emma Rodriguez", specialty: "Yoga & Flexibility", experience: "6 years", rating: 4.9, price: "$45/session", location: "Zen Wellness Center", description: "Certified yoga instructor and flexibility coach for all levels.", isOnline: true },
-    { id: 4, name: "David Kim", specialty: "HIIT & CrossFit", experience: "4 years", rating: 4.7, price: "$55/session", location: "CrossFit Box", description: "High-intensity interval training specialist and CrossFit Level 2 trainer.", isOnline: true }
-  ];
-
-  // ----------------- Backend Helpers -----------------
   const startConversation = async (trainerId) => {
     try {
       const creds = await getCredentials();
-      const token = creds.accessToken;
-
-      const res = await apiClient.post(
-        '/chat/conversations',
-        { recipientId: trainerId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      return res.data.data; // conversation object
+      const res = await apiClient.post('/chat/conversations', { recipientId: trainerId }, { headers: { Authorization: `Bearer ${creds.accessToken}` } });
+      return res.data.data;
     } catch (err) {
       console.error('Start conversation error:', err.response?.data || err.message);
       return null;
@@ -57,13 +160,7 @@ const Community = () => {
   const fetchMessages = async (conversationId) => {
     try {
       const creds = await getCredentials();
-      const token = creds.accessToken;
-
-      const res = await apiClient.get(
-        `/chat/conversations/${conversationId}/messages`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
+      const res = await apiClient.get(`/chat/conversations/${conversationId}/messages`, { headers: { Authorization: `Bearer ${creds.accessToken}` } });
       return res.data.data || [];
     } catch (err) {
       console.error('Fetch messages error:', err.response?.data || err.message);
@@ -74,13 +171,7 @@ const Community = () => {
   const sendMessageToBackend = async (conversationId, content) => {
     try {
       const creds = await getCredentials();
-      const token = creds.accessToken;
-
-      const res = await apiClient.post(
-        `/chat/conversations/${conversationId}/messages`,
-        { content },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await apiClient.post(`/chat/conversations/${conversationId}/messages`, { content }, { headers: { Authorization: `Bearer ${creds.accessToken}` } });
       return res.data.data;
     } catch (err) {
       console.error('Send message error:', err.response?.data || err.message);
@@ -90,51 +181,100 @@ const Community = () => {
 
   const sendMessage = async () => {
     if (!chatMessage.trim() || !selectedTrainer) return;
-
     const newMsg = await sendMessageToBackend(selectedTrainer.conversationId, chatMessage);
     if (newMsg) {
-      setChatMessages(prev => ({
-        ...prev,
-        [selectedTrainer.id]: [...(prev[selectedTrainer.id] || []), newMsg]
-      }));
+      setChatMessages(prev => ({ ...prev, [selectedTrainer.id]: [...(prev[selectedTrainer.id] || []), newMsg] }));
     }
     setChatMessage('');
   };
 
-  // ----------------- Renderers -----------------
-  const renderGroupsTab = () => (
+  const PostCard = ({ item }) => {
+    const [postComment, setPostComment] = useState('');
+    return (
+        <View style={styles.postCard}>
+            <View style={styles.postHeader}>
+                <Image source={{ uri: item.userAvatar }} style={styles.avatar} />
+                <Text style={styles.userName}>{item.userName}</Text>
+            </View>
+            <Image source={{ uri: item.imageUrl }} style={styles.postImage} />
+            <View style={styles.postActions}>
+                <TouchableOpacity onPress={() => handleLike(item.id)} style={styles.actionButton}>
+                    <Icon name={item.liked ? 'heart' : 'heart-outline'} size={24} color={item.liked ? '#FF5733' : '#fff'} />
+                    <Text style={styles.actionText}>{item.likes}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.actionButton}>
+                    <Icon name="chatbubble-outline" size={24} color="#fff" />
+                    <Text style={styles.actionText}>{item.comments.length}</Text>
+                </TouchableOpacity>
+            </View>
+            <Text style={styles.caption}>{item.caption}</Text>
+            <View style={styles.commentsSection}>
+                {item.comments.slice(0, 2).map(comment => (
+                    <Text key={comment.id} style={styles.commentText}>
+                        <Text style={{ fontWeight: 'bold' }}>{comment.userName}:</Text> {comment.text}
+                    </Text>
+                ))}
+                <View style={styles.commentInputContainer}>
+                    <TextInput
+                        style={styles.commentInput}
+                        placeholder="Add a comment..."
+                        placeholderTextColor="#aaa"
+                        value={postComment}
+                        onChangeText={setPostComment}
+                    />
+                    <TouchableOpacity onPress={() => {
+                        handleComment(item.id, postComment);
+                        setPostComment('');
+                    }}>
+                        <Icon name="send-outline" size={24} color="#FFC107" />
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </View>
+    );
+  };
+
+  const renderPostsTab = () => (
     <View style={styles.tabContent}>
-      <View style={styles.groupsList}>
-        {fitnessGroups.map(group => (
-          <TouchableOpacity key={group.id} style={styles.groupCard}>
-            <View style={styles.groupHeader}>
-              <Text style={styles.groupName}>{group.name}</Text>
-              <Text style={styles.groupMembers}>{group.members} members</Text>
-            </View>
-            <Text style={styles.groupActivity}>{group.activity}</Text>
-            <View style={styles.groupDetails}>
-              <View style={styles.detailItem}>
-                <Icon name="time-outline" size={16} color="#FFC107" />
-                <Text style={styles.detailText}>{group.meetingTime}</Text>
-              </View>
-              <View style={styles.detailItem}>
-                <Icon name="location-outline" size={16} color="#FFC107" />
-                <Text style={styles.detailText}>{group.location}</Text>
-              </View>
-            </View>
-            <Text style={styles.groupDescription}>{group.description}</Text>
-            <TouchableOpacity style={styles.joinButton}>
-              <Text style={styles.joinButtonText}>Join Group</Text>
-            </TouchableOpacity>
-          </TouchableOpacity>
-        ))}
-      </View>
+        <TouchableOpacity style={styles.createPostButton} onPress={() => setPostModalVisible(true)}>
+            <Icon name="add" size={24} color="#001f3f" />
+            <Text style={styles.createPostButtonText}>Create a Post</Text>
+        </TouchableOpacity>
+      <FlatList
+        data={posts}
+        keyExtractor={item => item.id}
+        renderItem={({item}) => <PostCard item={item} />}
+        showsVerticalScrollIndicator={false}
+      />
     </View>
   );
 
   const renderTrainersTab = () => {
     if (selectedTrainer) return renderTrainerChat();
-
+    if (isLoading) {
+      return (
+        <View style={styles.centeredView}>
+          <ActivityIndicator size="large" color="#FFC107" />
+        </View>
+      );
+    }
+    if (error) {
+      return (
+        <View style={styles.centeredView}>
+          <Text style={styles.infoText}>{error}</Text>
+          <TouchableOpacity onPress={fetchTrainers} style={styles.retryButton}>
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    if (trainers.length === 0) {
+      return (
+        <View style={styles.centeredView}>
+          <Text style={styles.infoText}>No trainers found.</Text>
+        </View>
+      );
+    }
     return (
       <View style={styles.tabContent}>
         <View style={styles.trainersList}>
@@ -168,7 +308,7 @@ const Community = () => {
               <View style={styles.trainerDetails}>
                 <View style={styles.detailItem}>
                   <Icon name="time-outline" size={16} color="#FFC107" />
-                  <Text style={styles.detailText}>{trainer.experience} experience</Text>
+                  <Text style={styles.detailText}>{trainer.experience}</Text>
                 </View>
                 <View style={styles.detailItem}>
                   <Icon name="card-outline" size={16} color="#FFC107" />
@@ -181,7 +321,7 @@ const Community = () => {
               </View>
               <Text style={styles.trainerDescription}>{trainer.description}</Text>
               <TouchableOpacity style={styles.chatButton}>
-                <Icon name="chatbubble-outline" size={18} color="white" />
+                <Icon name="chatbubble-outline" size={18} color="#001f3f" />
                 <Text style={styles.chatButtonText}>Start Chat</Text>
               </TouchableOpacity>
             </TouchableOpacity>
@@ -193,7 +333,6 @@ const Community = () => {
 
   const renderTrainerChat = () => {
     const messages = chatMessages[selectedTrainer.id] || [];
-
     return (
       <View style={styles.chatContainer}>
         <View style={styles.chatHeader}>
@@ -208,7 +347,6 @@ const Community = () => {
             </View>
           </View>
         </View>
-
         <FlatList
           data={messages}
           keyExtractor={(item, index) => item._id?.toString() || index.toString()}
@@ -225,7 +363,6 @@ const Community = () => {
           )}
           showsVerticalScrollIndicator={false}
         />
-
         <View style={styles.messageInputContainer}>
           <TextInput
             style={styles.messageInput}
@@ -247,10 +384,47 @@ const Community = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#001f3f" />
-      <LinearGradient colors={['#001f3f', '#002b5c']} style={styles.header}>
-        <Text style={styles.headerTitle}>Community</Text>
-        <Text style={styles.headerSubtitle}>Connect with fitness enthusiasts</Text>
-      </LinearGradient>
+      
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isPostModalVisible}
+        onRequestClose={() => {
+          setPostModalVisible(!isPostModalVisible);
+        }}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Create a New Post</Text>
+            <TouchableOpacity style={styles.imagePicker} onPress={handleSelectImage}>
+              {newPostImage ? (
+                <Image source={{ uri: newPostImage }} style={styles.imagePreview} />
+              ) : (
+                <>
+                  <Icon name="camera" size={40} color="#FFC107" />
+                  <Text style={styles.imagePickerText}>Select an Image</Text>
+                </>
+              )}
+            </TouchableOpacity>
+            <TextInput
+              style={styles.captionInput}
+              placeholder="Write a caption..."
+              placeholderTextColor="#aaa"
+              value={newPostCaption}
+              onChangeText={setNewPostCaption}
+              multiline
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={() => setPostModalVisible(false)}>
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalButton, styles.postButton]} onPress={handleAddPost}>
+                <Text style={styles.modalButtonText}>Post</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <View style={styles.tabContainer}>
         {tabs.map(tab => (
@@ -266,39 +440,21 @@ const Community = () => {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {activeTab === 'groups' && renderGroupsTab()}
+        {activeTab === 'posts' && renderPostsTab()}
         {activeTab === 'trainers' && renderTrainersTab()}
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-
-
-
-
 const styles = StyleSheet.create({
-  // (same styles you provided, unchanged)
   container: {
     flex: 1,
     backgroundColor: '#001f3f',
   },
-  header: {
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: 'white',
-    textAlign: 'center',
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
-    textAlign: 'center',
-    marginTop: 5,
+  content: {
+    flex: 1,
+    backgroundColor: '#001f3f',
   },
   tabContainer: {
     flexDirection: 'row',
@@ -326,78 +482,32 @@ const styles = StyleSheet.create({
   activeTabText: {
     color: '#FFC107',
   },
-  content: {
-    flex: 1,
-    backgroundColor: '#001f3f',
-  },
   tabContent: {
     padding: 20,
   },
-  groupsList: {
-    gap: 15,
-  },
-  groupCard: {
-    backgroundColor: '#002b5c',
-    borderRadius: 16,
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 193, 7, 0.2)',
+    marginTop: 50,
   },
-  groupHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  groupName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  groupMembers: {
-    fontSize: 14,
-    color: '#FFC107',
-  },
-  groupActivity: {
-    fontSize: 16,
-    color: '#FFC107',
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  groupDetails: {
-    marginBottom: 12,
-  },
-  detailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  detailText: {
-    fontSize: 14,
-    color: '#FFC107',
-    marginLeft: 8,
-  },
-  groupDescription: {
-    fontSize: 14,
+  infoText: {
     color: 'rgba(255, 255, 255, 0.8)',
-    marginBottom: 15,
-    lineHeight: 20,
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
   },
-  joinButton: {
+  retryButton: {
     backgroundColor: '#FFC107',
-    paddingVertical: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 30,
     borderRadius: 8,
-    alignItems: 'center',
   },
-  joinButtonText: {
+  retryButtonText: {
     color: '#001f3f',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   trainersList: {
     gap: 15,
@@ -461,6 +571,16 @@ const styles = StyleSheet.create({
   },
   trainerDetails: {
     marginBottom: 12,
+  },
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  detailText: {
+    fontSize: 14,
+    color: '#FFC107',
+    marginLeft: 8,
   },
   trainerDescription: {
     fontSize: 14,
@@ -585,6 +705,171 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // New styles for the posts tab
+  createPostButton: {
+    backgroundColor: '#FFC107',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  createPostButtonText: {
+    color: '#001f3f',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  postCard: {
+    backgroundColor: '#002b5c',
+    borderRadius: 16,
+    marginBottom: 20,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.2)',
+  },
+  postHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  userName: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  postImage: {
+    width: '100%',
+    height: screenWidth - 40, // Adjust height to be responsive
+  },
+  postActions: {
+    flexDirection: 'row',
+    padding: 12,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  actionText: {
+    color: '#fff',
+    marginLeft: 6,
+    fontSize: 14,
+  },
+  caption: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+    fontSize: 14,
+  },
+  commentsSection: {
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+  },
+  commentText: {
+    color: '#fff',
+    marginBottom: 4,
+  },
+  commentInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 193, 7, 0.2)',
+    paddingTop: 10,
+  },
+  commentInput: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 14,
+  },
+  // Add Post Modal Styles
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+  modalContent: {
+    backgroundColor: '#002b5c',
+    borderRadius: 16,
+    padding: 20,
+    width: screenWidth * 0.9,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.3)',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 20,
+  },
+  imagePicker: {
+    width: '100%',
+    height: 150,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 193, 7, 0.5)',
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#001f3f',
+    marginBottom: 20,
+  },
+  imagePickerText: {
+    color: '#FFC107',
+    marginTop: 10,
+  },
+  imagePreview: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+  },
+  captionInput: {
+    width: '100%',
+    minHeight: 80,
+    backgroundColor: '#001f3f',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.4)',
+    padding: 12,
+    color: '#fff',
+    fontSize: 16,
+    textAlignVertical: 'top',
+    marginBottom: 20,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#444',
+    marginRight: 10,
+  },
+  postButton: {
+    backgroundColor: '#FFC107',
+    marginLeft: 10,
+  },
+  modalButtonText: {
+    color: '#001f3f',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
 

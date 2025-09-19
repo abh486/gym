@@ -86,8 +86,6 @@
 // export default apiClient;
 
 
-
-
 // apiClient.js (axios instance with Auth0 token interceptor)
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -99,7 +97,7 @@ const auth0 = new Auth0({
 });
 
 const apiClient = axios.create({
-  baseURL: "https://a95ff83ae4eb.ngrok-free.app/api",
+  baseURL: " https://5d361da3675a.ngrok-free.app/api",
   timeout: 15000,
   headers: { "Content-Type": "application/json" },
 });

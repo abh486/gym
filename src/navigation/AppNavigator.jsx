@@ -10,7 +10,7 @@ import DietLog from "../screens/Member/DietLog";
 import LoginScreen from "../screens/LoginScreen";
 import WorkoutLog from "../screens/Member/WorkoutLog";
 import BottomTabNavigator from "./BottomTabNavigator";
-import WorkoutPlanDetail from "../screens/Member/WorkoutPlanDetail";
+
 
 const Stack = createNativeStackNavigator();
 
@@ -39,7 +39,7 @@ const AppNavigator = () => {
               <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
               <Stack.Screen name="DietLog" component={DietLog} />
               <Stack.Screen name="WorkoutLog" component={WorkoutLog} />
-              <Stack.Screen name="WorkoutPlanDetail" component={WorkoutPlanDetail} />
+              {/* <Stack.Screen name="WorkoutPlanDetail" component={WorkoutPlanDetail} /> */}
             </>
           ) : (
             // ✅ User authenticated but no profile → go to profile setup
