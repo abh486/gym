@@ -594,7 +594,7 @@ const MemberProfile = () => {
       // The `apiClient` is now ALWAYS configured with the correct Authorization header.
       // We don't need to do anything special here. This will now work.
       await apiClient.post(
-        '/auth0/create-member-profile', // The correct URL for your backend route
+        '/auth/create-member-profile', // The correct URL for your backend route
         { // The request body
           name: formData.name.trim(),
           age: Number(formData.age),

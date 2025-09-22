@@ -1,170 +1,3 @@
-// import React, { createContext, useContext, useState, useEffect } from "react";
-// import { Platform } from "react-native";
-// import { useAuth0 } from "react-native-auth0";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
-// import apiClient, { getToken, debugStorage } from "../api/apiClient";
-
-// const AuthContext = createContext();
-
-// const getRedirectUri = () =>
-//   Platform.OS === "ios"
-//     ? "com.fitnessclub://callback"
-//     : "com.fitnessclub://callback";
-
-// export const AuthProvider = ({ children }) => {
-//   const { authorize, clearSession } = useAuth0();
-
-//   const [token, setToken] = useState(null);
-//   const [userProfile, setUserProfile] = useState(null);
-//   const [isAuthenticated, setIsAuthenticated] = useState(false);
-//   const [loading, setLoading] = useState(true);
-//   const [hasProfile, setHasProfile] = useState(null);
-
-//   // ✅ Attach token to all POST/PUT requests for dev (Ngrok)
-//   useEffect(() => {
-//     const interceptor = apiClient.interceptors.request.use((config) => {
-//       if (token && (config.method === "post" || config.method === "put")) {
-//         config.data = { ...(config.data || {}), token };
-//       }
-//       return config;
-//     });
-//     return () => apiClient.interceptors.request.eject(interceptor);
-//   }, [token]);
-
-//   // ✅ Check if user has profile in backend
-//   const checkProfile = async (accessToken) => {
-//     try {
-//       const res = await apiClient.get("/user/auth0/profile", {
-//         headers: { Authorization: `Bearer ${accessToken}` },
-//       });
-
-//       if (res.data && res.data.id) {
-//         setHasProfile(true);
-//       } else {
-//         setHasProfile(false); // no profile → force profile creation
-//       }
-//     } catch (err) {
-//       console.error("🔴 [checkProfile] failed:", err.message);
-//       setHasProfile(false);
-//     }
-//   };
-
-//   // ✅ Restore session on app start
-//   useEffect(() => {
-//     const restore = async () => {
-//       try {
-//         const savedToken = await getToken();
-//         if (savedToken) {
-//           setToken(savedToken);
-
-//           const resp = await apiClient.post("/auth/auth0/verify-user", {
-//             token: savedToken,
-//           });
-
-//           if (resp.data?.success) {
-//             setUserProfile(resp.data.data);
-//             setIsAuthenticated(true);
-//             await AsyncStorage.setItem(
-//               "userProfile",
-//               JSON.stringify(resp.data.data)
-//             );
-
-//             // Check if user already has a profile
-//             await checkProfile(savedToken);
-//           }
-//         }
-//       } catch (e) {
-//         console.error("🔴 [restore] failed:", e.message);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-//     restore();
-//   }, []);
-
-//   // ✅ Login
-//   const login = async () => {
-//     setLoading(true);
-//     try {
-//       const redirectUri = getRedirectUri();
-//       const creds = await authorize({
-//         scope: "openid profile email",
-//         audience: "https://api.fitnessclub.com",
-//         redirectUri,
-//       });
-
-//       if (creds?.accessToken) {
-//         setToken(creds.accessToken);
-//         await AsyncStorage.setItem("accessToken", creds.accessToken);
-
-//         const resp = await apiClient.post("/auth/auth0/verify-user", {
-//           token: creds.accessToken,
-//         });
-
-//         if (resp.data?.success) {
-//           setUserProfile(resp.data.data);
-//           setIsAuthenticated(true);
-//           await AsyncStorage.setItem(
-//             "userProfile",
-//             JSON.stringify(resp.data.data)
-//           );
-
-//           // Check profile status
-//           await checkProfile(creds.accessToken);
-//         } else {
-//           throw new Error("Backend verification failed");
-//         }
-//       }
-//     } catch (e) {
-//       console.error("🔴 [login] failed:", e.message);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   // ✅ Logout
-//   const logout = async () => {
-//     setLoading(true);
-//     try {
-//       await clearSession();
-//     } catch (e) {
-//       console.warn("Clear session error:", e.message);
-//     } finally {
-//       setToken(null);
-//       setUserProfile(null);
-//       setIsAuthenticated(false);
-//       setHasProfile(null);
-//       await AsyncStorage.clear();
-//       setLoading(false);
-//     }
-//   };
-
-//   return (
-//     <AuthContext.Provider
-//       value={{
-//         token,
-//         userProfile,
-//         isAuthenticated,
-//         hasProfile,
-//         loading,
-//         login,
-//         logout,
-//         debugStorage,
-//       }}
-//     >
-//       {children}
-//     </AuthContext.Provider>
-//   );
-// };
-
-// export const useAuth = () => {
-//   const ctx = useContext(AuthContext);
-//   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
-//   return ctx;
-// };
-
-// src/context/AuthContext.js
-
 // src/context/AuthContext.js
 
 import React, { createContext, useContext, useState, useEffect } from "react";
@@ -186,47 +19,61 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hasProfile, setHasProfile] = useState(false);
-  const [userProfile, setUserProfile] = useState(null); // Added for completeness
+  const [userProfile, setUserProfile] = useState(null);
 
   const checkAuthStatus = async () => {
-    console.log("[AuthContext] Checking auth status...");
+    console.log("------------------------------------------");
+    console.log("[DEBUG] 1. Starting checkAuthStatus...");
+    setLoading(true);
     try {
       const savedToken = await getToken();
       if (!savedToken) {
-        throw new Error("No token found. User is logged out.");
+        throw new Error("No token found in storage.");
       }
+      console.log("[DEBUG] 2. Token found. Verifying with /auth/verify-member...");
 
-      // The apiClient interceptor will now AUTOMATICALLY add the token to the header.
-      // We no longer need to pass it in the body.
-      const resp = await apiClient.post("/auth/auth0/verify-user");
+      const resp = await apiClient.post("/auth/verify-member");
+
+      console.log("[DEBUG] 3. Received response from backend.");
 
       if (resp.data?.success && resp.data.data) {
-        const profile = resp.data.data;
-        setUserProfile(profile);
+       const userObject = resp.data.data.user; 
+        console.log("[DEBUG] 4. Backend verification SUCCESS. Full user object received:", JSON.stringify(userObject, null, 2));
+        
+        setUserProfile(userObject);
         setIsAuthenticated(true);
-        await AsyncStorage.setItem("userProfile", JSON.stringify(profile));
+        await AsyncStorage.setItem("userProfile", JSON.stringify(userObject));
 
-        if (profile.memberProfile && profile.memberProfile.name) {
-          console.log("[AuthContext] Profile is complete.");
+        // --- THIS IS THE CRITICAL LOGIC WE NEED TO OBSERVE ---
+        console.log("[DEBUG] 5. Now checking if profile is complete...");
+        console.log("[DEBUG]    Checking userObject.memberProfile:", userObject.memberProfile);
+        console.log("[DEBUG]    Checking userObject.memberProfile.name:", userObject.memberProfile?.name);
+
+        if (userObject.memberProfile && userObject.memberProfile.name) {
+          console.log("[DEBUG] 6. ✅ RESULT: Profile is considered COMPLETE.");
           setHasProfile(true);
         } else {
-          console.log("[AuthContext] Profile is incomplete.");
+          console.log("[DEBUG] 6. ❌ RESULT: Profile is considered INCOMPLETE.");
           setHasProfile(false);
         }
+        // --- END OF CRITICAL LOGIC ---
+
       } else {
-        throw new Error("Backend verification failed.");
+        throw new Error("Backend verification failed or returned no data.");
       }
     } catch (e) {
-      console.error("🔴 [checkAuthStatus] failed:", e.message);
+      console.error("🔴 [DEBUG] 7. ERROR in checkAuthStatus:", e.message);
       setIsAuthenticated(false);
       setHasProfile(false);
     } finally {
+      console.log("[DEBUG] 8. checkAuthStatus finished.");
       setLoading(false);
+      console.log("------------------------------------------");
     }
   };
 
   const refreshAuthStatus = async () => {
-    console.log("[AuthContext] Refreshing auth status after profile update...");
+    console.log("🔄 [DEBUG] Refresh triggered after profile update.");
     await checkAuthStatus();
   };
 
@@ -245,7 +92,6 @@ export const AuthProvider = ({ children }) => {
 
       if (creds?.accessToken) {
         await AsyncStorage.setItem("accessToken", creds.accessToken);
-        // After login, re-run the check. The interceptor will use the new token.
         await checkAuthStatus();
       } else {
         setLoading(false);
