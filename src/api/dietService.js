@@ -204,7 +204,7 @@ export const saveDietEntry = async (dietData) => {
 
     console.log('[DietService] Transformed data:', transformedData);
     
-    const response = await apiClient.post('/diet/auth0/logs', transformedData);
+    const response = await apiClient.post('/diet/logs', transformedData);
     
     console.log('[DietService] Raw response:', response.data);
     
@@ -233,7 +233,7 @@ export const getDietLogsByDate = async (date) => {
   try {
     console.log('[DietService] Fetching diet logs for date:', date);
     
-    const response = await apiClient.get(`/diet/auth0/logs/date/${date}`);
+    const response = await apiClient.get(`/diet/logs/date/${date}`);
     
     console.log('[DietService] Raw response:', response.data);
     
@@ -263,7 +263,7 @@ export const updateDietLog = async (logId, updateData) => {
   try {
     console.log('[DietService] Updating diet log:', logId, updateData);
     
-    const response = await apiClient.put(`/diet/auth0/logs/${logId}`, updateData);
+    const response = await apiClient.put(`/diet/logs/${logId}`, updateData);
     
     console.log('[DietService] Raw response:', response.data);
     
@@ -292,7 +292,7 @@ export const deleteDietLog = async (logId) => {
   try {
     console.log('[DietService] Deleting diet log:', logId);
     
-    await apiClient.delete(`/diet/auth0/logs/${logId}`);
+    await apiClient.delete(`/diet/logs/${logId}`);
     
     return {
       success: true,

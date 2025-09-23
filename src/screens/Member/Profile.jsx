@@ -51,7 +51,7 @@ const Profile = () => {
     setError(null);
     try {
       const [profileResult, notificationsResult] = await Promise.allSettled([
-        apiClient.get('/users/auth0/profile'),
+        apiClient.get('/users/profile'),
         apiClient.get('/notifications'),
       ]);
       if (profileResult.status === 'fulfilled' && profileResult.value.data.success) {
