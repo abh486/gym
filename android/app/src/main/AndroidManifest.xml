@@ -3,15 +3,11 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
-<uses-permission android:name="android.permission.BODY_SENSORS"/>
+    <uses-permission android:name="android.permission.BODY_SENSORS"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 
-
-<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-
-
-
-
+    <!-- ✅ FIXED: All attributes are now correctly placed inside the opening <application> tag. -->
     <application
       android:name=".MainApplication"
       android:label="@string/app_name"
@@ -19,11 +15,12 @@
       android:roundIcon="@mipmap/ic_launcher_round"
       android:allowBackup="false"
       android:theme="@style/AppTheme"
-      android:supportsRtl="true">
+      android:supportsRtl="true"
+      android:usesCleartextTraffic="true">
 
       <meta-data
-  android:name="com.google.android.geo.API_KEY"
-  android:value="AIzaSyA74lZvl2WzcyaRpjdCNa6MhmxBC8uw7tk"/>
+        android:name="com.google.android.geo.API_KEY"
+        android:value="AIzaSyA74lZvl2WzcyaRpjdCNa6MhmxBC8uw7tk"/>
 
       <activity
         android:name=".MainActivity"
@@ -47,4 +44,4 @@
         </intent-filter>
       </activity>
     </application>
-</manifest>  
+</manifest>

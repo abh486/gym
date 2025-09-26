@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,17 +11,16 @@ import {
   StatusBar,
   FlatList,
   Dimensions,
+  ActivityIndicator, // To show a loading spinner
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import Events from './Events'; // Import the Events.js component
+import { fetchProducts } from '../../api/shopService'; // ✅ IMPORT THE NEW SERVICE
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = (SCREEN_WIDTH - 60) / 2;
-
-const wheyProteinImg = require('../../assets/image/protein-gym.jpg');
-const creatineImg = require('../../assets/image/19886.jpg');
 
 const tabs = [
   { id: 'shop', title: 'Shop', icon: 'bag-handle' },
@@ -37,104 +36,7 @@ const categories = [
   { id: 'nutrition', name: 'Nutrition', icon: 'leaf' },
 ];
 
-const products = [
-  {
-    id: 1,
-    name: "Premium Whey Protein",
-    brand: "NutriFit Pro",
-    price: "₹1,299",
-    originalPrice: "₹1,899",
-    image: wheyProteinImg,
-    category: "Supplements",
-    rating: 4.8,
-    reviews: 2847,
-    discount: 32,
-    badge: "Best Seller",
-    badgeColor: ['#FFC107', '#FFA000'],
-    isNew: false,
-    inStock: true,
-  },
-  {
-    id: 2,
-    name: "Smart Fitness Watch Pro",
-    brand: "TechFit",
-    price: "₹4,999",
-    originalPrice: "₹7,999",
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400",
-    category: "Electronics",
-    rating: 4.6,
-    reviews: 1523,
-    discount: 37,
-    badge: "Premium",
-    badgeColor: ['#FF6B35', '#FF5252'],
-    isNew: true,
-    inStock: true,
-  },
-  {
-    id: 3,
-    name: "Eco Yoga Mat Deluxe",
-    brand: "ZenFlex",
-    price: "₹1,599",
-    originalPrice: "₹2,299",
-    image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400",
-    category: "Equipment",
-    rating: 4.9,
-    reviews: 892,
-    discount: 30,
-    badge: "Eco",
-    badgeColor: ['#00C8C8', '#00B0B0'],
-    isNew: false,
-    inStock: true,
-  },
-  {
-    id: 4,
-    name: "Resistance Band Set Pro",
-    brand: "FlexForce",
-    price: "₹899",
-    originalPrice: "₹1,399",
-    image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400",
-    category: "Equipment",
-    rating: 4.7,
-    reviews: 634,
-    discount: 36,
-    badge: "Popular",
-    badgeColor: ['#FFC107', '#FFA000'],
-    isNew: false,
-    inStock: false,
-  },
-  {
-    id: 5,
-    name: "Creatine Monohydrate",
-    brand: "PowerMax",
-    price: "₹799",
-    originalPrice: "₹999",
-    image: creatineImg,
-    category: "Supplements",
-    rating: 4.5,
-    reviews: 1247,
-    discount: 20,
-    badge: "Value",
-    badgeColor: ['#FFC107', '#FFA000'],
-    isNew: true,
-    inStock: true,
-  },
-  {
-    id: 6,
-    name: "Wireless Earbuds Sport",
-    brand: "AudioFit",
-    price: "₹2,499",
-    originalPrice: "₹3,999",
-    image: "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?w=400",
-    category: "Electronics",
-    rating: 4.4,
-    reviews: 756,
-    discount: 37,
-    badge: "Hot",
-    badgeColor: ['#FF6B35', '#FF5252'],
-    isNew: false,
-    inStock: true,
-  },
-];
+// ❌ Hardcoded products array is removed. Data will now come from the API.
 
 const Store = () => {
   const [activeTab, setActiveTab] = useState('shop');
@@ -143,6 +45,35 @@ const Store = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedSort, setSelectedSort] = useState('popular');
   const [likedItems, setLikedItems] = useState(new Set());
+
+  // ✅ NEW STATE FOR HANDLING BACKEND DATA
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // ✅ USEEFFECT TO FETCH PRODUCTS ON COMPONENT MOUNT
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        // Call the service to get data. The service returns the response object.
+        const response = await fetchProducts(); 
+        // The actual list of products is inside the `data` property of the response
+        setProducts(response.data || []); 
+      } catch (err) {
+        setError('Failed to fetch products. Please try again later.');
+        console.error("Error in Store component:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    // Only fetch products if the 'shop' tab is active
+    if (activeTab === 'shop') {
+      loadProducts();
+    }
+  }, [activeTab]); // Dependency array ensures this runs when the tab changes
 
   const toggleLike = (productId) => {
     setLikedItems(prev => {
@@ -159,8 +90,9 @@ const Store = () => {
   const renderProductCard = ({ item: product }) => (
     <TouchableOpacity style={[styles.productCard, { width: CARD_WIDTH }]}>
       <View style={styles.productImageContainer}>
+        {/* ✅ Use the first image from the backend `images` array */}
         <Image
-          source={typeof product.image === 'string' ? { uri: product.image } : product.image}
+          source={{ uri: product.images && product.images[0] ? product.images[0] : 'https://via.placeholder.com/160' }}
           style={styles.productImage}
           resizeMode="cover"
         />
@@ -168,26 +100,7 @@ const Store = () => {
           colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.3)']}
           style={styles.imageOverlay}
         />
-        <View style={styles.badgeContainer}>
-          {product.discount > 0 && (
-            <View style={styles.discountBadge}>
-              <Text style={styles.discountText}>-{product.discount}%</Text>
-            </View>
-          )}
-          {product.isNew && (
-            <View style={[styles.newBadge, { marginTop: product.discount > 0 ? 6 : 0 }]}>
-              <Text style={styles.newText}>NEW</Text>
-            </View>
-          )}
-        </View>
-        <LinearGradient
-          colors={product.badgeColor}
-          style={styles.productBadge}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <Text style={styles.productBadgeText}>{product.badge}</Text>
-        </LinearGradient>
+        {/* Badges can be customized based on data you might add to your backend later */}
         <TouchableOpacity
           style={styles.likeButton}
           onPress={() => toggleLike(product.id)}
@@ -201,46 +114,74 @@ const Store = () => {
       </View>
 
       <View style={styles.productInfo}>
-        <Text style={styles.brandText}>{product.brand}</Text>
+        {/* ✅ Use seller's store name from backend */}
+        <Text style={styles.brandText}>{product.seller?.storeName || 'GymFlex Store'}</Text>
         <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
 
         <View style={styles.ratingContainer}>
           <Icon name="star" size={14} color="#FFC107" />
-          <Text style={styles.ratingText}>{product.rating}</Text>
-          <Text style={styles.reviewsText}>({product.reviews.toLocaleString()})</Text>
+          {/* Mock rating, as it's not in the backend schema yet */}
+          <Text style={styles.ratingText}>4.7</Text>
+          <Text style={styles.reviewsText}>({Math.floor(Math.random() * 2000)})</Text>
         </View>
 
         <View style={styles.priceContainer}>
-          <Text style={styles.currentPrice}>{product.price}</Text>
-          {product.originalPrice && (
-            <Text style={styles.originalPrice}>{product.originalPrice}</Text>
-          )}
+          {/* ✅ Format the price from the backend number */}
+          <Text style={styles.currentPrice}>₹{product.price.toLocaleString()}</Text>
         </View>
 
         <TouchableOpacity
           style={[
             styles.addToCartButton,
-            !product.inStock && styles.outOfStockButton
+            product.stock <= 0 && styles.outOfStockButton // Use `stock` from backend
           ]}
-          disabled={!product.inStock}
+          disabled={product.stock <= 0}
         >
           <View
             style={[
               styles.buttonSolidBlue,
-              !product.inStock && styles.outOfStockButton
+              product.stock <= 0 && styles.outOfStockButton
             ]}
           >
             <Text style={[
               styles.addToCartText,
-              !product.inStock && styles.outOfStockText
+              product.stock <= 0 && styles.outOfStockText
             ]}>
-              {product.inStock ? 'Add to Cart' : 'Out of Stock'}
+              {product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
             </Text>
           </View>
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
+
+  // ✅ A NEW RENDER FUNCTION FOR THE MAIN CONTENT AREA
+  const renderProductList = () => {
+    if (loading) {
+      return <ActivityIndicator size="large" color="#FFC107" style={{ marginTop: 50 }} />;
+    }
+
+    if (error) {
+      return <Text style={styles.errorText}>{error}</Text>;
+    }
+
+    if (products.length === 0) {
+      return <Text style={styles.errorText}>No products found.</Text>;
+    }
+
+    return (
+      <FlatList
+        data={products}
+        renderItem={renderProductCard}
+        keyExtractor={(item) => item.id.toString()}
+        numColumns={2}
+        columnWrapperStyle={styles.productRow}
+        scrollEnabled={false} // Important for nesting in ScrollView
+        showsVerticalScrollIndicator={false}
+      />
+    );
+  };
+
 
   const renderShopTab = () => (
     <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
@@ -325,18 +266,11 @@ const Store = () => {
       <View style={styles.productsSection}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Products</Text>
-          <Text style={styles.itemCount}>{products.length} items</Text>
+          {!loading && !error && <Text style={styles.itemCount}>{products.length} items</Text>}
         </View>
 
-        <FlatList
-          data={products}
-          renderItem={renderProductCard}
-          keyExtractor={(item) => item.id.toString()}
-          numColumns={2}
-          columnWrapperStyle={styles.productRow}
-          scrollEnabled={false}
-          showsVerticalScrollIndicator={false}
-        />
+        {/* ✅ USE THE NEW RENDER FUNCTION HERE */}
+        {renderProductList()}
       </View>
     </ScrollView>
   );
@@ -435,6 +369,7 @@ const Store = () => {
   );
 };
 
+// --- STYLES ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -553,14 +488,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     width: '100%',
   },
-  buttonSolidBlueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFC107',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 16,
-  },
   addToCartText: {
     color: '#001f3f',
     fontSize: 14,
@@ -656,46 +583,6 @@ const styles = StyleSheet.create({
     right: 0,
     height: 40,
   },
-  badgeContainer: {
-    position: 'absolute',
-    top: 12,
-    left: 12,
-  },
-  discountBadge: {
-    backgroundColor: '#FFC107',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  discountText: {
-    color: '#001f3f',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  newBadge: {
-    backgroundColor: '#00C8C8',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  newText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  productBadge: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  productBadgeText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
   likeButton: {
     position: 'absolute',
     bottom: 12,
@@ -722,6 +609,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginBottom: 8,
     lineHeight: 20,
+    height: 40, // Set a fixed height to ensure alignment
   },
   ratingContainer: {
     flexDirection: 'row',
@@ -762,7 +650,8 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   outOfStockButton: {
-    opacity: 0.6,
+    backgroundColor: '#333',
+    opacity: 0.7,
     width: '100%',
   },
   outOfStockText: {
@@ -825,6 +714,13 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     marginTop: 16,
+  },
+  errorText: {
+    color: '#FFa000',
+    textAlign: 'center',
+    fontSize: 16,
+    marginTop: 50,
+    paddingHorizontal: 20,
   },
 });
 
