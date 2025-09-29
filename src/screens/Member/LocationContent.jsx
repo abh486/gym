@@ -4,7 +4,7 @@ import React from 'react';
 import { View, StyleSheet, Text, ScrollView, TouchableOpacity, Image, Dimensions, TextInput, Modal, Platform, Animated, ActivityIndicator } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Ionicons';
-
+import React, { useEffect } from 'react';
 const { width } = Dimensions.get('window');
 
 const LocationContent = ({
@@ -46,7 +46,7 @@ const LocationContent = ({
       </View>
     );
   }
-
+ 
   const initialRegion = {
     latitude: 28.7041,
     longitude: 77.1025,
@@ -66,6 +66,14 @@ const LocationContent = ({
     if (!gyms || gyms.length === 0) {
       return <Text style={styles.emptyText}>No gyms found. Try expanding your search area or adjusting filters.</Text>;
     }
+      useEffect(() => {
+    // Check if we have a valid location and the map is ready
+    if (userLocation && mapRef.current) {
+      console.log('[LocationContent] User location updated. Animating map...');
+      // Use the onMyLocation function passed from the parent to center the map
+      onMyLocation();
+    }
+  }, [userLocation, mapRef, onMyLocation]);
     return (
       <ScrollView style={styles.gymList} showsVerticalScrollIndicator={false}>
         {gyms.map((gym) => {
