@@ -290,8 +290,10 @@ const Community = () => {
             style={[styles.tab, activeTab === tab.id && styles.activeTab]}
             onPress={() => setActiveTab(tab.id)}
           >
-            <Icon name={tab.icon} size={22} color={activeTab === tab.id ? '#FFC107' : 'rgba(255, 255, 255, 0.6)'} />
-            <Text style={[styles.tabText, activeTab === tab.id && styles.activeTabText]}>{tab.title}</Text>
+            <Icon name={tab.icon} size={22} color={activeTab === tab.id ? 
+              '#FFC107' : 'rgba(255, 255, 255, 0.6)'} />
+            <Text style={[styles.tabText, activeTab === tab.id && 
+              styles.activeTabText]}>{tab.title}</Text>
           </TouchableOpacity>
         ))}
       </View>

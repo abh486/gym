@@ -11,13 +11,15 @@ import {
   StatusBar,
   FlatList,
   Dimensions,
-  ActivityIndicator, // To show a loading spinner
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import Events from './Events'; // Import the Events.js component
-import { fetchProducts } from '../../api/shopService'; // ✅ IMPORT THE NEW SERVICE
+import Events from './Events';
+import { fetchProducts } from '../../api/shopService';
+import { fetchCart, addToCart, removeFromCart, updateCartItem } from '../../api/cartService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = (SCREEN_WIDTH - 60) / 2;
@@ -36,61 +38,170 @@ const categories = [
   { id: 'nutrition', name: 'Nutrition', icon: 'leaf' },
 ];
 
-// ❌ Hardcoded products array is removed. Data will now come from the API.
-
 const Store = () => {
+  // --- STATE ---
   const [activeTab, setActiveTab] = useState('shop');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedSort, setSelectedSort] = useState('popular');
   const [likedItems, setLikedItems] = useState(new Set());
-
-  // ✅ NEW STATE FOR HANDLING BACKEND DATA
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [cartItems, setCartItems] = useState([]);
+  const [isCartVisible, setIsCartVisible] = useState(false);
 
-  // ✅ USEEFFECT TO FETCH PRODUCTS ON COMPONENT MOUNT
+  // --- useEffect FOR FETCHING INITIAL DATA ---
   useEffect(() => {
-    const loadProducts = async () => {
+    const loadInitialData = async () => {
       try {
+        console.log('[STORE] Loading initial data...');
         setLoading(true);
         setError(null);
-        // Call the service to get data. The service returns the response object.
-        const response = await fetchProducts(); 
-        // The actual list of products is inside the `data` property of the response
-        setProducts(response.data || []); 
+
+        const [productsResult, cartResult] = await Promise.allSettled([
+          fetchProducts(),
+          fetchCart(),
+        ]);
+        
+        if (productsResult.status === 'fulfilled') {
+          const rawData = productsResult.value;
+          let productArray = [];
+          if (Array.isArray(rawData)) {
+            productArray = rawData;
+          } else if (rawData && Array.isArray(rawData.data)) {
+            productArray = rawData.data;
+          }
+          console.log("[STORE] Successfully processed products:", productArray);
+          setProducts(productArray);
+        } else {
+          console.error("[STORE] Error fetching products:", productsResult.reason);
+          setError("Failed to load products. Please check your connection.");
+        }
+
+        if (cartResult.status === 'fulfilled') {
+          console.log("[STORE] Successfully fetched cart:", cartResult.value);
+          setCartItems(cartResult.value || []);
+        } else {
+          console.warn("[STORE] Could not fetch cart:", cartResult.reason);
+          setCartItems([]);
+        }
+
       } catch (err) {
-        setError('Failed to fetch products. Please try again later.');
-        console.error("Error in Store component:", err);
+        console.error("[STORE] Critical error in loadInitialData:", err);
+        setError("An unexpected error occurred. Please restart the app.");
       } finally {
         setLoading(false);
       }
     };
-    
-    // Only fetch products if the 'shop' tab is active
-    if (activeTab === 'shop') {
-      loadProducts();
-    }
-  }, [activeTab]); // Dependency array ensures this runs when the tab changes
 
+    if (activeTab === 'shop') {
+      loadInitialData();
+    }
+  }, [activeTab]);
+
+  // --- CART HANDLERS ---
+  const handleAddToCart = async (product) => {
+    try {
+      console.log('[STORE] Adding to cart:', product);
+      console.log('[STORE] Product ID:', product.id);
+      
+      const updatedItem = await addToCart(product.id, 1);
+      console.log('[STORE] API response for addToCart:', updatedItem);
+  
+      setCartItems(prevItems => {
+        console.log('[STORE] Previous cart items:', prevItems);
+        const existingItemIndex = prevItems.findIndex(item => item.id === updatedItem.id);
+  
+        if (existingItemIndex > -1) {
+          console.log('[STORE] Updating existing cart item');
+          const newItems = [...prevItems];
+          newItems[existingItemIndex] = updatedItem;
+          return newItems;
+        } else {
+          console.log('[STORE] Adding new item to cart');
+          return [...prevItems, updatedItem];
+        }
+      });
+  
+      Alert.alert('Success', `${product.name} has been added to your cart.`);
+  
+    } catch (apiError) {
+      console.error("[STORE] Error in handleAddToCart:", apiError);
+      console.error("[STORE] Error response:", apiError.response);
+      
+      let errorMessage = 'Please try again later.';
+      if (apiError.response) {
+        errorMessage = apiError.response.data?.message || apiError.response.data?.error || errorMessage;
+      } else if (apiError.request) {
+        errorMessage = 'No response from server. Please check your connection.';
+      } else {
+        errorMessage = apiError.message;
+      }
+      
+      Alert.alert('Error', `Could not add item to cart. ${errorMessage}`);
+    }
+  };
+
+  const handleUpdateCartItem = async (cartItemId, newQuantity) => {
+    try {
+      console.log('[STORE] Updating cart item:', { cartItemId, newQuantity });
+      
+      if (newQuantity < 1) {
+        console.log('[STORE] Quantity less than 1, removing item');
+        await removeFromCart(cartItemId);
+        setCartItems(prevItems => prevItems.filter(item => item.id !== cartItemId));
+      } else {
+        console.log('[STORE] Updating item quantity');
+        const updatedItem = await updateCartItem(cartItemId, newQuantity);
+        console.log('[STORE] Updated item response:', updatedItem);
+        setCartItems(prevItems => 
+          prevItems.map(item => item.id === cartItemId ? updatedItem : item)
+        );
+      }
+    } catch (apiError) {
+      console.error("[STORE] Error in handleUpdateCartItem:", apiError);
+      console.error("[STORE] Error response:", apiError.response);
+      const errorMessage = apiError.response?.data?.message || 'Please try again later.';
+      Alert.alert('Error', `Could not update item. ${errorMessage}`);
+    }
+  };
+
+  const handleRemoveFromCart = async (cartItemId) => {
+    try {
+      console.log('[STORE] Removing from cart:', cartItemId);
+      await removeFromCart(cartItemId);
+      setCartItems(prevItems => prevItems.filter(item => item.id !== cartItemId));
+    } catch (apiError) {
+      console.error("[STORE] Error in handleRemoveFromCart:", apiError);
+      console.error("[STORE] Error response:", apiError.response);
+      const errorMessage = apiError.response?.data?.message || 'Please try again later.';
+      Alert.alert('Error', `Could not remove item. ${errorMessage}`);
+    }
+  };
+
+  const getCartTotal = () => {
+    const total = cartItems
+      .reduce((sum, item) => sum + (item.product?.price || 0) * item.quantity, 0);
+    console.log('[STORE] Calculated cart total:', total);
+    return total.toLocaleString();
+  };
+
+  // --- EXISTING FUNCTIONS (UNCHANGED) ---
   const toggleLike = (productId) => {
     setLikedItems(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(productId)) {
-        newSet.delete(productId);
-      } else {
-        newSet.add(productId);
-      }
+      if (newSet.has(productId)) newSet.delete(productId);
+      else newSet.add(productId);
       return newSet;
     });
   };
 
+  // --- RENDER FUNCTIONS ---
   const renderProductCard = ({ item: product }) => (
     <TouchableOpacity style={[styles.productCard, { width: CARD_WIDTH }]}>
       <View style={styles.productImageContainer}>
-        {/* ✅ Use the first image from the backend `images` array */}
         <Image
           source={{ uri: product.images && product.images[0] ? product.images[0] : 'https://via.placeholder.com/160' }}
           style={styles.productImage}
@@ -100,7 +211,6 @@ const Store = () => {
           colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.3)']}
           style={styles.imageOverlay}
         />
-        {/* Badges can be customized based on data you might add to your backend later */}
         <TouchableOpacity
           style={styles.likeButton}
           onPress={() => toggleLike(product.id)}
@@ -114,28 +224,24 @@ const Store = () => {
       </View>
 
       <View style={styles.productInfo}>
-        {/* ✅ Use seller's store name from backend */}
         <Text style={styles.brandText}>{product.seller?.storeName || 'GymFlex Store'}</Text>
         <Text style={styles.productName} numberOfLines={2}>{product.name}</Text>
-
         <View style={styles.ratingContainer}>
           <Icon name="star" size={14} color="#FFC107" />
-          {/* Mock rating, as it's not in the backend schema yet */}
           <Text style={styles.ratingText}>4.7</Text>
           <Text style={styles.reviewsText}>({Math.floor(Math.random() * 2000)})</Text>
         </View>
-
         <View style={styles.priceContainer}>
-          {/* ✅ Format the price from the backend number */}
           <Text style={styles.currentPrice}>₹{product.price.toLocaleString()}</Text>
         </View>
 
         <TouchableOpacity
           style={[
             styles.addToCartButton,
-            product.stock <= 0 && styles.outOfStockButton // Use `stock` from backend
+            product.stock <= 0 && styles.outOfStockButton
           ]}
           disabled={product.stock <= 0}
+          onPress={() => handleAddToCart(product)}
         >
           <View
             style={[
@@ -155,20 +261,16 @@ const Store = () => {
     </TouchableOpacity>
   );
 
-  // ✅ A NEW RENDER FUNCTION FOR THE MAIN CONTENT AREA
   const renderProductList = () => {
     if (loading) {
       return <ActivityIndicator size="large" color="#FFC107" style={{ marginTop: 50 }} />;
     }
-
     if (error) {
       return <Text style={styles.errorText}>{error}</Text>;
     }
-
-    if (products.length === 0) {
+    if (!products || products.length === 0) {
       return <Text style={styles.errorText}>No products found.</Text>;
     }
-
     return (
       <FlatList
         data={products}
@@ -176,37 +278,14 @@ const Store = () => {
         keyExtractor={(item) => item.id.toString()}
         numColumns={2}
         columnWrapperStyle={styles.productRow}
-        scrollEnabled={false} // Important for nesting in ScrollView
+        scrollEnabled={false}
         showsVerticalScrollIndicator={false}
       />
     );
   };
 
-
   const renderShopTab = () => (
     <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
-      <View style={[styles.heroSection, { backgroundColor: '#001f3f' }]}>
-        <View style={styles.heroContent}>
-          <Text style={styles.heroTitle}>Fitness Store</Text>
-          <Text style={styles.heroSubtitle}>Transform your fitness journey with premium products</Text>
-
-          <View style={styles.heroFeatures}>
-            <View style={styles.heroFeature}>
-              <Icon name="shield-checkmark" size={16} color="white" />
-              <Text style={styles.heroFeatureText}>Premium Quality</Text>
-            </View>
-            <View style={styles.heroFeature}>
-              <Icon name="flash" size={16} color="white" />
-              <Text style={styles.heroFeatureText}>Fast Delivery</Text>
-            </View>
-            <View style={styles.heroFeature}>
-              <Icon name="trending-up" size={16} color="white" />
-              <Text style={styles.heroFeatureText}>Best Prices</Text>
-            </View>
-          </View>
-        </View>
-      </View>
-
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
           <Icon name="search" size={20} color="#FFC107" />
@@ -218,7 +297,6 @@ const Store = () => {
             placeholderTextColor="#aaa"
           />
         </View>
-
         <TouchableOpacity
           style={styles.filterButton}
           onPress={() => setShowFilters(true)}
@@ -268,41 +346,115 @@ const Store = () => {
           <Text style={styles.sectionTitle}>Products</Text>
           {!loading && !error && <Text style={styles.itemCount}>{products.length} items</Text>}
         </View>
-
-        {/* ✅ USE THE NEW RENDER FUNCTION HERE */}
         {renderProductList()}
       </View>
     </ScrollView>
   );
 
+  const renderCartModal = () => (
+    <Modal
+      visible={isCartVisible}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => setIsCartVisible(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.cartModalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>My Cart</Text>
+            <TouchableOpacity onPress={() => setIsCartVisible(false)}>
+              <Icon name="close" size={24} color="#FFC107" />
+            </TouchableOpacity>
+          </View>
+          
+          {cartItems.length === 0 ? (
+            <View style={styles.emptyCartContainer}>
+                <Icon name="cart-outline" size={60} color="rgba(255,255,255,0.3)" />
+                <Text style={styles.emptyCartText}>Your cart is empty</Text>
+            </View>
+          ) : (
+            <>
+              <FlatList
+                data={cartItems}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item }) => (
+                  <View style={styles.cartItem}>
+                    <Image source={{ uri: item.product?.images?.[0] || 'https://via.placeholder.com/160' }} style={styles.cartItemImage} />
+                    <View style={styles.cartItemDetails}>
+                      <Text style={styles.cartItemName} numberOfLines={1}>{item.product?.name}</Text>
+                      <Text style={styles.cartItemPrice}>₹{item.product?.price?.toLocaleString()}</Text>
+                    </View>
+                    <View style={styles.quantityContainer}>
+                      <TouchableOpacity 
+                        style={styles.quantityButton}
+                        onPress={() => handleUpdateCartItem(item.id, item.quantity - 1)}
+                      >
+                        <Icon name="remove" size={18} color="#FFC107" />
+                      </TouchableOpacity>
+                      <Text style={styles.quantityText}>{item.quantity}</Text>
+                      <TouchableOpacity 
+                        style={styles.quantityButton}
+                        onPress={() => handleUpdateCartItem(item.id, item.quantity + 1)}
+                      >
+                        <Icon name="add" size={18} color="#FFC107" />
+                      </TouchableOpacity>
+                    </View>
+                    <TouchableOpacity onPress={() => handleRemoveFromCart(item.id)}>
+                      <Icon name="trash-outline" size={22} color="#FFa000" />
+                    </TouchableOpacity>
+                  </View>
+                )}
+                showsVerticalScrollIndicator={false}
+              />
+
+              <View style={styles.cartFooter}>
+                  <Text style={styles.cartTotalText}>Total: ₹{getCartTotal()}</Text>
+                  <TouchableOpacity style={styles.checkoutButton}>
+                      <View style={styles.buttonSolidBlue}>
+                         <Text style={styles.applyButtonText}>Checkout</Text>
+                      </View>
+                  </TouchableOpacity>
+              </View>
+            </>
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: '#001f3f' }]}>
       <StatusBar barStyle="light-content" backgroundColor="#001f3f" />
-
-      <View style={styles.tabContainer}>
-        {tabs.map((tab) => (
-          <TouchableOpacity
-            key={tab.id}
-            style={[styles.tab, activeTab === tab.id && styles.activeTab]}
-            onPress={() => setActiveTab(tab.id)}
-          >
-            {activeTab === tab.id && <View style={styles.activeTabBackground} />}
-            <Icon
-              name={tab.icon}
-              size={20}
-              color={activeTab === tab.id ? '#FFC107' : 'rgba(255,255,255,0.7)'}
-              style={styles.tabIcon}
-            />
-            <Text
-              style={[
-                styles.tabText,
-                { color: activeTab === tab.id ? '#FFC107' : 'rgba(255,255,255,0.7)' },
-              ]}
+      <View style={styles.header}>
+        <View style={styles.tabContainer}>
+          {tabs.map((tab) => (
+            <TouchableOpacity
+              key={tab.id}
+              style={[styles.tab, activeTab === tab.id && styles.activeTab]}
+              onPress={() => setActiveTab(tab.id)}
             >
-              {tab.title}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              {activeTab === tab.id && <View style={styles.activeTabBackground} />}
+              <Icon
+                name={tab.icon}
+                size={20}
+                color={activeTab === tab.id ? '#FFC107' : 'rgba(255,255,255,0.7)'}
+                style={styles.tabIcon}
+              />
+              <Text style={[styles.tabText, { color: activeTab === tab.id ? '#FFC107' : 'rgba(255,255,255,0.7)' }]}>
+                {tab.title}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <TouchableOpacity style={styles.cartButton} onPress={() => setIsCartVisible(true)}>
+          <Icon name="cart" size={28} color="#FFC107" />
+          {cartItems.length > 0 && (
+            <View style={styles.cartBadge}>
+              <Text style={styles.cartBadgeText}>{cartItems.length}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
 
       {activeTab === 'shop' && renderShopTab()}
@@ -322,7 +474,6 @@ const Store = () => {
                 <Icon name="close" size={24} color="#FFC107" />
               </TouchableOpacity>
             </View>
-
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={styles.filterSection}>
                 <Text style={styles.filterSectionTitle}>Sort By</Text>
@@ -352,7 +503,6 @@ const Store = () => {
                   )
                 )}
               </View>
-
               <TouchableOpacity
                 style={styles.applyButton}
                 onPress={() => setShowFilters(false)}
@@ -365,21 +515,136 @@ const Store = () => {
           </View>
         </View>
       </Modal>
+
+      {renderCartModal()}
     </View>
   );
 };
 
-// --- STYLES ---
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { flex: 1 },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 40,
+    paddingBottom: 20,
+    backgroundColor: '#001f3f',
   },
   tabContainer: {
+    flex: 1,
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    paddingTop: 40,
-    backgroundColor: '#001f3f',
+    marginRight: 20,
+  },
+  cartButton: {
+    position: 'relative',
+    padding: 5,
+  },
+  cartBadge: {
+    position: 'absolute',
+    right: -2,
+    top: -2,
+    backgroundColor: '#FFC107',
+    borderRadius: 9,
+    width: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#001f3f',
+  },
+  cartBadgeText: {
+    color: '#001f3f',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  cartModalContainer: {
+    backgroundColor: '#002b5c',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    height: '60%',
+  },
+  emptyCartContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+  },
+  emptyCartText: {
+      fontSize: 16,
+      color: 'rgba(255,255,255,0.5)',
+      marginTop: 16,
+      fontWeight: '500',
+  },
+  cartItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 193, 7, 0.2)',
+  },
+  cartItemImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    marginRight: 16,
+  },
+  cartItemDetails: {
+    flex: 1,
+  },
+  cartItemName: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  cartItemPrice: {
+    fontSize: 14,
+    color: '#FFC107',
+    marginTop: 4,
+  },
+  quantityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#002b5c',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 193, 7, 0.3)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginRight: 12,
+  },
+  quantityButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quantityText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+    marginHorizontal: 8,
+    minWidth: 20,
+    textAlign: 'center',
+  },
+  cartFooter: {
+      paddingTop: 20,
+      borderTopWidth: 1,
+      borderTopColor: 'rgba(255, 193, 7, 0.2)',
+      marginTop: 10,
+  },
+  cartTotalText: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: 'white',
+      textAlign: 'right',
+      marginBottom: 16,
+  },
+  checkoutButton: {
+      borderRadius: 16,
+      overflow: 'hidden',
   },
   tab: {
     flex: 1,
@@ -410,46 +675,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     backgroundColor: '#001f3f',
-  },
-  heroSection: {
-    borderRadius: 24,
-    padding: 24,
-    marginBottom: 24,
-    marginTop: 20,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  heroContent: {
-    flex: 1,
-    zIndex: 1,
-  },
-  heroTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 8,
-  },
-  heroSubtitle: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.9)',
-    marginBottom: 20,
-    lineHeight: 24,
-  },
-  heroFeatures: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  heroFeature: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 20,
-    marginBottom: 8,
-  },
-  heroFeatureText: {
-    color: 'white',
-    fontSize: 14,
-    marginLeft: 6,
-    fontWeight: '500',
   },
   searchContainer: {
     flexDirection: 'row',
@@ -491,7 +716,7 @@ const styles = StyleSheet.create({
   addToCartText: {
     color: '#001f3f',
     fontSize: 14,
-    fontWeight: '400',
+    fontWeight: '600',
     textAlign: 'center',
     width: '100%',
   },
@@ -560,11 +785,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#002b5c',
     borderRadius: 20,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 5,
     borderWidth: 1,
     borderColor: 'rgba(255, 193, 7, 0.2)',
   },
@@ -609,7 +829,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginBottom: 8,
     lineHeight: 20,
-    height: 40, // Set a fixed height to ensure alignment
+    height: 40,
   },
   ratingContainer: {
     flexDirection: 'row',
@@ -637,11 +857,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
     marginRight: 8,
-  },
-  originalPrice: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
-    textDecorationLine: 'line-through',
   },
   addToCartButton: {
     borderRadius: 12,
