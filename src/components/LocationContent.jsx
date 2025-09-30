@@ -1,5 +1,5 @@
 // src/components/LocationContent.jsx
-import React from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { View, StyleSheet, Text, ScrollView, TouchableOpacity, Image, Platform, Animated, ActivityIndicator } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -8,7 +8,9 @@ import { SearchModal } from './SearchModal';
 import { FilterModal } from './FilterModal';
 import { GymDetailsModal } from './GymDetailsModal'; 
 
+// ❌ NO useAuth IMPORT
 export const LocationContent = ({
+  user, // RECEIVES the user object as a prop
   gyms,
   isLoading,
   error,
@@ -17,7 +19,7 @@ export const LocationContent = ({
   permissionGranted,
   isLoadingLocation,
   mapRef,
-  mapSelectedGym, // This can be used for map-specific highlighting
+  mapSelectedGym,
   selectedGym,
   isModalLoading,
   onGymPress,
@@ -25,12 +27,22 @@ export const LocationContent = ({
   onMyLocation,
   onCameraPress,
   onCloseGymModal,
-  // Modal state and handlers
   searchQuery, onSearchQueryChange, showSearchModal, onSearchModalClose, onSearchPress,
   filterOptions, sortOptions, selectedFilter, selectedSort, onFilterChange, onSortChange, showFilterModal, onFilterModalClose, onFilterPress,
-  // Permission handlers
   onRequestLocationPermission, onSkipPermission
 }) => {
+
+  const isSubscribedToThisGym = useMemo(() => {
+    if (!user?.subscriptions || !selectedGym?.plans) return false;
+    const gymPlanIds = new Set(selectedGym.plans.map(p => p.id));
+    return user.subscriptions.some(sub => sub.gymPlanId && gymPlanIds.has(sub.gymPlanId));
+  }, [user?.subscriptions, selectedGym?.plans]);
+  
+  useEffect(() => {
+    if (userLocation && mapRef.current) {
+      onMyLocation();
+    }
+  }, [userLocation, mapRef, onMyLocation]);
 
   const mapRegion = userLocation ? { ...userLocation, latitudeDelta: 0.0922, longitudeDelta: 0.0421 } : null;
 
@@ -82,6 +94,8 @@ export const LocationContent = ({
         isVisible={!!selectedGym}
         isLoading={isModalLoading}
         onClose={onCloseGymModal}
+        isSubscribed={isSubscribedToThisGym} 
+        userSubscriptions={user?.subscriptions || []}
       />
 
       <View style={styles.header}>
@@ -185,7 +199,6 @@ export const LocationContent = ({
   );
 };
 
-// --- THIS IS THE COMPLETE STYLESHEET FROM YOUR THEMED FILE ---
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 50 : 20, paddingBottom: 10, position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, backgroundColor: 'transparent' },
   searchButton: { width: 50, height: 50, borderRadius: 25, backgroundColor: '#FFC107', justifyContent: 'center', alignItems: 'center', elevation: 5 },

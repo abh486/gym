@@ -166,3 +166,13 @@ export const getGymDetails = async (gymId) => {
     }
   }
 };
+/**
+ * Attempts to check the logged-in user into a specific gym.
+ * @param {string} gymId - The ID of the gym to check into.
+ * @returns {Promise<object>} The backend response.
+ */
+export const checkInToGym = async (gymId) => {
+  // We send the gymId in the body, as expected by the backend controller.
+  const response = await apiClient.post('/gyms/check-in', { gymId });
+  return response.data;
+};
