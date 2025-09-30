@@ -1,17 +1,19 @@
 // src/components/GymDetailsModal.jsx
 import React, { useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, Image, StyleSheet, ScrollView, Linking, ActivityIndicator } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, Image, StyleSheet, ScrollView, Linking, ActivityIndicator, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import * as subscriptionService from '../api/subscriptionService';
+import * as gymService from '../api/gymService';
 
-export const GymDetailsModal = ({ gym, isVisible, isLoading, onClose }) => {
+export const GymDetailsModal = ({ gym, isVisible, isLoading, onClose, isSubscribed, userSubscriptions }) => {
   const navigation = useNavigation();
   const [subscribingPlanId, setSubscribingPlanId] = useState(null);
+  const [isCheckingIn, setIsCheckingIn] = useState(false);
   const [error, setError] = useState('');
 
   const handleBookNowPress = () => {
-    onClose(); // Close the modal first
+    onClose();
     navigation.navigate('GymDetails', { gymId: gym?.id });
   };
 
@@ -34,9 +36,30 @@ export const GymDetailsModal = ({ gym, isVisible, isLoading, onClose }) => {
     }
   };
 
+  const handleCheckIn = async () => {
+    setIsCheckingIn(true);
+    setError('');
+    try {
+        const response = await gymService.checkInToGym(gym.id);
+        if (response.success) {
+            Alert.alert("Check-in Successful!", `Welcome to ${gym.name}.`);
+            onClose();
+        } else {
+            throw new Error(response.message);
+        }
+    } catch (error) {
+        Alert.alert(
+            "Check-in Failed", 
+            error.response?.data?.message || "An unknown error occurred."
+        );
+    } finally {
+        setIsCheckingIn(false);
+    }
+  };
+
   if (!gym) return null;
 
-  const amenities = Array.isArray(gym.facilities) ? gym.facilities : ['Equipment', 'Parking'];
+  const amenities = Array.isArray(gym.facilities) ? gym.facilities : [];
   const distance = gym.distance ? `${gym.distance.toFixed(1)} km away` : 'N/A';
   const rating = gym.rating || '4.5';
   const plans = Array.isArray(gym.plans) ? gym.plans : [];
@@ -56,7 +79,7 @@ export const GymDetailsModal = ({ gym, isVisible, isLoading, onClose }) => {
 
           <ScrollView showsVerticalScrollIndicator={false}>
             <Image 
-                source={{ uri: gym.photos?.[0] || 'https://images.unsplash.com/photo-154049707ท7202-7c8a3999166f' }} 
+                source={{ uri: gym.photos?.[0] || 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f' }} 
                 style={styles.modalImage}
             />
 
@@ -68,7 +91,6 @@ export const GymDetailsModal = ({ gym, isVisible, isLoading, onClose }) => {
               ) : (
                 <>
                   <Text style={styles.modalGymName}>{gym.name}</Text>
-              
                   <View style={styles.modalSubHeader}>
                       <View style={styles.modalRatingContainer}>
                         <Icon name="star" size={16} color="#FFC107" />
@@ -97,32 +119,51 @@ export const GymDetailsModal = ({ gym, isVisible, isLoading, onClose }) => {
                     </View>
                   </View>
 
-                  {plans.length > 0 && (
-                    <View style={styles.section}>
-                      <Text style={styles.sectionTitle}>Membership Plans</Text>
-                      <View style={styles.plansContainer}>
-                        {plans.map((plan) => (
-                          <View key={plan.id} style={styles.planItem}>
-                            <View style={styles.planDetails}>
-                              <Text style={styles.planName}>{plan.name}</Text>
-                              <Text style={styles.planDuration}>₹{plan.price} / {plan.duration}</Text>
-                            </View>
-                            <TouchableOpacity 
-                                style={styles.subscribeButton}
-                                onPress={() => handleSubscribePress(plan)}
-                                disabled={subscribingPlanId === plan.id}
-                            >
-                                {subscribingPlanId === plan.id ? (
-                                    <ActivityIndicator color="#001f3f" size="small" />
-                                ) : (
-                                    <Text style={styles.subscribeButtonText}>Subscribe</Text>
-                                )}
-                            </TouchableOpacity>
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Membership</Text>
+                    {isSubscribed ? (
+                        <View style={styles.subscribedMessageContainer}>
+                            <Icon name="checkmark-circle" size={24} color="#27ae60" />
+                            <Text style={styles.subscribedMessageText}>You have an active membership at this gym.</Text>
+                        </View>
+                    ) : (
+                        plans.length > 0 ? (
+                          <View style={styles.plansContainer}>
+                            {plans.map((plan) => {
+                              const isSubscribedToThisPlan = userSubscriptions.some(sub => sub.gymPlanId === plan.id);
+                              return (
+                                <View key={plan.id} style={styles.planItem}>
+                                  <View style={styles.planDetails}>
+                                    <Text style={styles.planName}>{plan.name}</Text>
+                                    <Text style={styles.planDuration}>₹{plan.price} / {plan.duration}</Text>
+                                  </View>
+                                  {isSubscribedToThisPlan ? (
+                                    <View style={styles.subscribedBadge}>
+                                      <Icon name="checkmark-circle" size={20} color="#27ae60" />
+                                      <Text style={styles.subscribedText}>Active</Text>
+                                    </View>
+                                  ) : (
+                                    <TouchableOpacity 
+                                        style={[styles.subscribeButton, isSubscribed && styles.disabledButton]}
+                                        onPress={() => handleSubscribePress(plan)}
+                                        disabled={subscribingPlanId === plan.id || isSubscribed}
+                                    >
+                                      {subscribingPlanId === plan.id ? (
+                                          <ActivityIndicator color="#001f3f" size="small" />
+                                      ) : (
+                                          <Text style={styles.subscribeButtonText}>Subscribe</Text>
+                                      )}
+                                    </TouchableOpacity>
+                                  )}
+                                </View>
+                              );
+                            })}
                           </View>
-                        ))}
-                      </View>
-                    </View>
-                  )}
+                        ) : (
+                          <Text style={styles.featureText}>This gym has not listed any plans yet.</Text>
+                        )
+                    )}
+                  </View>
 
                   <View style={styles.infoContainer}>
                     <View style={styles.infoItem}>
@@ -141,9 +182,19 @@ export const GymDetailsModal = ({ gym, isVisible, isLoading, onClose }) => {
 
           {!isLoading && (
             <View style={styles.modalActions}>
-               <TouchableOpacity style={styles.modalBookButton} onPress={handleBookNowPress}>
-                 <Text style={styles.modalBookButtonText}>View Full Details</Text>
-               </TouchableOpacity>
+               {isSubscribed ? (
+                 <TouchableOpacity 
+                    style={styles.checkInButton} 
+                    onPress={handleCheckIn}
+                    disabled={isCheckingIn}
+                 >
+                   {isCheckingIn ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.checkInButtonText}>Check In Now</Text>}
+                 </TouchableOpacity>
+               ) : (
+                 <TouchableOpacity style={styles.modalBookButton} onPress={handleBookNowPress}>
+                   <Text style={styles.modalBookButtonText}>View Full Details</Text>
+                 </TouchableOpacity>
+               )}
             </View>
           )}
         </View>
@@ -173,41 +224,15 @@ const styles = StyleSheet.create({
     featureItem: { width: '50%', flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
     featureText: { fontSize: 14, color: '#aaa', marginLeft: 6 },
     plansContainer: { gap: 10 },
-    planItem: { 
-      flexDirection: 'row', 
-      justifyContent: 'space-between', 
-      alignItems: 'center',
-      paddingVertical: 10,
-      paddingHorizontal: 15, 
-      backgroundColor: '#002b5c', 
-      borderRadius: 12 
-    },
+    planItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 15, backgroundColor: '#002b5c', borderRadius: 12 },
     planDetails: { flex: 1, marginRight: 10 },
-    planName: { 
-      fontSize: 16, 
-      fontWeight: '600', 
-      color: '#ffffff' 
-    },
-    planDuration: { 
-      fontSize: 14, 
-      color: '#aaa', 
-      marginTop: 2,
-    },
-    subscribeButton: {
-        backgroundColor: '#FFC107',
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 8,
-        minWidth: 110,
-        height: 40,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    subscribeButtonText: {
-        color: '#001f3f',
-        fontWeight: 'bold',
-        fontSize: 14,
-    },
+    planName: { fontSize: 16, fontWeight: '600', color: '#ffffff' },
+    planDuration: { fontSize: 14, color: '#aaa', marginTop: 2, textTransform: 'capitalize' },
+    subscribeButton: { backgroundColor: '#FFC107', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8, minWidth: 110, height: 40, justifyContent: 'center', alignItems: 'center' },
+    subscribeButtonText: { color: '#001f3f', fontWeight: 'bold', fontSize: 14 },
+    disabledButton: { backgroundColor: '#888' },
+    subscribedBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'transparent', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8 },
+    subscribedText: { color: '#27ae60', fontWeight: 'bold', fontSize: 14, marginLeft: 6 },
     infoContainer: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 10, paddingTop: 15, borderTopWidth: 1, borderTopColor: '#002b5c' },
     infoItem: { flexDirection: 'row', alignItems: 'center' },
     infoText: { fontSize: 14, color: '#aaa', marginLeft: 6 },
@@ -215,4 +240,8 @@ const styles = StyleSheet.create({
     modalBookButton: { flex: 1, backgroundColor: '#FFC107', paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
     modalBookButtonText: { color: '#001f3f', fontSize: 16, fontWeight: 'bold' },
     errorText: { color: '#ff4d4d', textAlign: 'center', marginBottom: 15, fontSize: 14 },
+    checkInButton: { flex: 1, backgroundColor: '#27ae60', paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
+    checkInButtonText: { color: '#ffffff', fontSize: 16, fontWeight: 'bold' },
+    subscribedMessageContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(39, 174, 96, 0.1)', padding: 15, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(39, 174, 96, 0.5)' },
+    subscribedMessageText: { color: '#27ae60', fontSize: 16, fontWeight: '600', marginLeft: 10, flex: 1 },
 });
