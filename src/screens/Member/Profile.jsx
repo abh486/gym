@@ -9,13 +9,13 @@ import {
   Switch,
   ActivityIndicator,
   Alert,
-  Linking, // ✅ IMPORT LINKING
+  Linking,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/apiClient';
-import * as subscriptionService from '../../api/subscriptionService'; // ✅ IMPORT SUBSCRIPTION SERVICE
+import * as subscriptionService from '../../api/subscriptionService';
 
 const colors = {
   background: '#001f3f',
@@ -36,12 +36,12 @@ const Profile = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isBillingLoading, setIsBillingLoading] = useState(false); // Loading state for the billing button
+  const [isBillingLoading, setIsBillingLoading] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
   const navigation = useNavigation();
   const { logout } = useAuth();
-
   const [userProfile, setUserProfile] = useState(null);
-  const [notifications, setNotifications] = useState([]);
 
   const tabs = [
     { id: 'profile', title: 'Profile', icon: 'person' },
@@ -58,14 +58,24 @@ const Profile = () => {
       } else {
         throw new Error('Failed to load profile.');
       }
-      // Notifications can fail silently
-      apiClient.get('/notifications').then(res => {
-        if(res.data.success) setNotifications(res.data.data);
-      }).catch(err => console.warn('Notifications fetch failed:', err));
     } catch (err) {
       setError(err.response?.data?.message || 'An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    setNotificationsLoading(true);
+    try {
+      const notificationsResult = await apiClient.get('/notifications/me');
+      if (notificationsResult.data.success) {
+        setNotifications(notificationsResult.data.data);
+      }
+    } catch (err) {
+      console.warn('Notifications fetch failed:', err);
+    } finally {
+      setNotificationsLoading(false);
     }
   };
 
@@ -83,8 +93,35 @@ const Profile = () => {
       setNotificationsEnabled(!value);
     }
   };
-  
-  // ✅✅✅ NEW FUNCTION TO HANDLE BILLING PORTAL ✅✅✅
+
+  const handleMarkAsRead = async (notificationId) => {
+    try {
+      await apiClient.patch(`/notifications/${notificationId}/read`);
+      // Update the local state to reflect the change
+      setNotifications(prevNotifications =>
+        prevNotifications.map(notification =>
+          notification.id === notificationId
+            ? { ...notification, read: true }
+            : notification
+        )
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to mark notification as read');
+    }
+  };
+
+  const handleDeleteNotification = async (notificationId) => {
+    try {
+      await apiClient.delete(`/notifications/${notificationId}`);
+      // Update the local state to remove the notification
+      setNotifications(prevNotifications =>
+        prevNotifications.filter(notification => notification.id !== notificationId)
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to delete notification');
+    }
+  };
+
   const handleManageBilling = async () => {
     setIsBillingLoading(true);
     try {
@@ -107,6 +144,12 @@ const Profile = () => {
     return unsubscribe;
   }, [navigation]);
 
+  useEffect(() => {
+    if (activeTab === 'notifications') {
+      fetchNotifications();
+    }
+  }, [activeTab]);
+
   if (loading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -126,7 +169,6 @@ const Profile = () => {
     );
   }
 
-  // Use the fetched user profile data
   const safeUserProfile = userProfile || {};
   const memberProfile = safeUserProfile.memberProfile || {};
   const memberSinceDate = safeUserProfile.createdAt ? new Date(safeUserProfile.createdAt).toLocaleDateString() : 'N/A';
@@ -172,7 +214,6 @@ const Profile = () => {
       <View style={[styles.actionsCard, { backgroundColor: colors.surface }]}>
         <Text style={[styles.actionsTitle, { color: colors.text }]}>Quick Actions</Text>
         
-        {/* ✅✅✅ CONDITIONALLY RENDERED BILLING BUTTON ✅✅✅ */}
         {safeUserProfile.role === 'MEMBER' && (
           <TouchableOpacity 
             style={[styles.actionButton, { borderBottomColor: colors.border }]} 
@@ -201,7 +242,64 @@ const Profile = () => {
 
   const renderNotificationsTab = () => (
     <View style={styles.tabContent}>
-      {/* ... Unchanged notifications JSX ... */}
+      <View style={[styles.detailsCard, { backgroundColor: colors.surface }]}>
+        <Text style={[styles.detailsTitle, { color: colors.text }]}>Notifications</Text>
+        
+        {notificationsLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : notifications.length === 0 ? (
+          <View style={[styles.emptyState, { backgroundColor: colors.surface }]}>
+            <Icon name="notifications-none" size={48} color={colors.textSecondary} />
+            <Text style={[styles.emptyText, { color: colors.text }]}>No notifications</Text>
+            <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
+              You're all caught up!
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.notificationsContainer}>
+            {notifications.map((notification) => (
+              <View
+                key={notification.id}
+                style={[
+                  styles.notificationCard,
+                  { backgroundColor: colors.surface },
+                  !notification.read && styles.unreadNotification
+                ]}
+              >
+                <View style={styles.notificationContent}>
+                  <Text style={[styles.notificationTitle, { color: colors.text }]}>
+                    {notification.title}
+                  </Text>
+                  <Text style={[styles.notificationMessage, { color: colors.textSecondary }]}>
+                    {notification.message}
+                  </Text>
+                  <Text style={[styles.notificationTime, { color: colors.textSecondary }]}>
+                    {new Date(notification.createdAt).toLocaleDateString()}
+                  </Text>
+                </View>
+                
+                {!notification.read && (
+                  <TouchableOpacity
+                    style={styles.markAsReadButton}
+                    onPress={() => handleMarkAsRead(notification.id)}
+                  >
+                    <Icon name="check" size={20} color={colors.primary} />
+                  </TouchableOpacity>
+                )}
+                
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => handleDeleteNotification(notification.id)}
+                >
+                  <Icon name="delete" size={20} color={colors.error} />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
     </View>
   );
 
@@ -415,12 +513,13 @@ const styles = StyleSheet.create({
   notificationTime: {
     fontSize: 12,
   },
-  unreadDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.primary,
+  markAsReadButton: {
+    padding: 8,
     marginLeft: 10,
+  },
+  deleteButton: {
+    padding: 8,
+    marginLeft: 5,
   },
   emptyState: {
     borderRadius: 16,
@@ -434,6 +533,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 8,
+    marginTop: 10,
   },
   emptySubtext: {
     fontSize: 14,
@@ -451,6 +551,10 @@ const styles = StyleSheet.create({
     color: colors.primaryText,
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
   },
 });
 
